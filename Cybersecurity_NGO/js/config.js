@@ -2,11 +2,10 @@
    ✏️  CONFIG – edit your links here. Leave url "" to hide a button.
    ===================================================================== */
 const CONFIG = {
-  // Kahoot for the starting quiz and the final check.
-  // Live game: keep "https://kahoot.it" (participants type the PIN on screen).
-  // Self-paced challenge: paste the challenge link Kahoot gives you.
-  kahootStart: { url: "https://kahoot.it", note: "Enter the game PIN shown on the trainer's screen." },
-  kahootEnd:   { url: "https://kahoot.it", note: "Enter the game PIN shown on the trainer's screen." },
+  // Quiz tool for the starting quiz and the final check (same link for both).
+  quizTool: "Genially",
+  quizStart: { url: "https://view.genially.com/6af97fe204b75ee77a57c7ab", note: "The quiz opens in a new tab. Come back here when you're done." },
+  quizEnd:   { url: "https://view.genially.com/6af97fe204b75ee77a57c7ab", note: "The quiz opens in a new tab. Come back here when you're done." },
 
   // Feedback form at the end (e.g. a Microsoft Forms or Google Forms link).
   feedback: { url: "", label: "Give your feedback (1 minute)" },
