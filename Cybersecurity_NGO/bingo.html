@@ -201,7 +201,7 @@ function makeCard(){
 /* ---------------- START CODE (clock sync, no server) ----------------
    The trainer starts the game at the next full minute; the code is that minute (00-59).
    Every phone turns the code into the same moment, so all boards unlock together. */
-const SEC = 60;
+const SEC = 45;   // 8 situations x 45 s = 6 minutes
 function nextStartMinute(){ const t = new Date(Date.now() + 20000); t.setSeconds(0,0); t.setMinutes(t.getMinutes() + 1); return t.getTime(); }
 function startFromCode(code){
   if (!/^\d{1,2}$/.test(code)) return null;
@@ -244,7 +244,7 @@ function renderIntro(){
         <li><b style="color:var(--green)">Good habit</b> <span>that helps</span></li>
         <li><b style="color:#e07000">Trap</b> <span>the wrong reaction to avoid</span></li>
       </ul>
-      <p class="muted">You have <b>3 picks per situation</b>. Changed your mind? Tap your pick again. After 1 minute the right squares turn <b style="color:#1e9e3e">green</b> – only green squares count for Bingo.</p>
+      <p class="muted">You have <b>3 picks per situation</b> – at most <b>one of each kind</b> (one common attack, one good habit, one weak point, one trap). Changed your mind? Tap your pick again. After 45 seconds the right squares turn <b style="color:#1e9e3e">green</b> – only green squares count for Bingo.</p>
     </section>
     <section class="intro">
       <h2>How to win</h2>
@@ -340,6 +340,7 @@ function renderCard(){
   // picks per situation: { "0": [ids], "1": [ids], ... } – max 3 per situation
   let picks = store.get("picks5e", {});
   const PICKS = 3;
+  const KIND_NAME = { flag: "common attack", habit: "good habit", weak: "weak point", trap: "trap" };
   const curIdx = () => Math.floor((Date.now() - store.get("bingoStart", Date.now())) / 1000 / SEC);
   // a pick turns green (confirmed) once its minute is over and it was one of the 3 right squares
   const greens = (cur) => { const g = new Set(); for (let k = 0; k < Math.min(cur, SITUATIONS.length); k++) (picks[k] || []).forEach(id => { if (SITUATIONS[k].a.includes(id)) g.add(id); }); return g; };
@@ -367,10 +368,12 @@ function renderCard(){
       if (k >= SITUATIONS.length) return;                       // game over: card is final
       if (g.has(id)) return note("This square is already confirmed ✓");
       let list = picks[k] || [];
+      const kind = label(id).t, same = list.find(x => label(x).t === kind);
       if (list.includes(id)) list = list.filter(x => x !== id);  // tap again = undo
+      else if (same) { list = list.map(x => x === same ? id : x); window._pendingNote = `Only one ${KIND_NAME[kind]} per situation – your pick was moved.`; }  // one per kind: swap
       else if (list.length >= PICKS) return note("Only 3 picks per situation – tap one of your picks to change it.");
       else list = [...list, id];
-      picks[k] = list; store.set("picks5e", picks); draw(); if (window._qTick) window._qTick(true);
+      picks[k] = list; store.set("picks5e", picks); const msg = window._pendingNote; draw(); if (window._qTick) window._qTick(true); if (msg) { window._pendingNote = null; note(msg); }
     });
   };
   const note = (m) => { const n = document.getElementById("qnote"); if (n) { n.textContent = m; n.classList.add("show"); clearTimeout(window._noteT); window._noteT = setTimeout(() => n.classList.remove("show"), 2500); } };
@@ -498,13 +501,13 @@ function renderTrainer(){
           ${s.t ? `<p><b style="color:#e07000">The trap:</b> ${label(s.t).x} (${s.tw.replace(/\.$/, "")})</p>` : ""}</div>
         <div class="tbar"><button class="tbtn" id="show">Show the answer</button><button class="tbtn ghost" id="reset">Stop the game</button></div>
       </div>
-      <footer>Trainer screen · The next situation appears automatically after 1 minute, on the screen and on every phone. Check a “Bingo!” line before you accept it.</footer>`;
+      <footer>Trainer screen · The next situation appears automatically after 45 seconds, on the screen and on every phone. Check a “Bingo!” line before you accept it.</footer>`;
       $("#show").onclick = () => { ansOpen = true; $("#ans").classList.add("show"); };
       $("#reset").onclick = () => { if (confirm("Stop the game for everyone?")) reset(); };
     }
     $("#tt").textContent = "⏱ " + mmss(left); $("#tt").classList.toggle("low", left <= 10);
     $("#tf").style.width = (left / SEC * 100) + "%";
-    if (left <= 15 && !ansOpen) { ansOpen = true; $("#ans").classList.add("show"); }   // answer shows by itself for the last 15 s
+    if (left <= 12 && !ansOpen) { ansOpen = true; $("#ans").classList.add("show"); }   // answer shows by itself for the last 12 s
   };
   tick(); window._tTimer = setInterval(tick, 250);
 }

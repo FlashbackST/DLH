@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ransomware escape room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#172033; --paper:#F5F6F8; --mist:#E6EAF0; --soft:#4A5568;
+  --blue:#2457C5; --blue-dark:#8FB3FF; --warn:#B4480F; --warn-bg:#FBEBDD;
+  --soft-dark:#B9C3D4; --ok:#1B6B3C; --ok-bg:#E1F1E6; --night:#0C111D; --hot:#FF9A4D;
+  --u:min(1vw,1.7778vh);
+  --head:"Space Grotesk",Arial,sans-serif; --body:"Inter",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);overflow:hidden;
+  transition:background-color .3s ease;font-size:calc(var(--u)*2);line-height:1.35}
+body.dark{background:var(--night);color:#fff}
+[hidden]{display:none !important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+svg.i{width:1em;height:1em;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.14em}
+
+#stage{position:absolute;left:50%;top:50%;width:calc(var(--u)*100);height:calc(var(--u)*56.25);
+  transform:translate(-50%,-50%)}
+
+/* top bar */
+#bar{position:absolute;left:0;right:0;top:0;height:calc(var(--u)*5);display:flex;align-items:center;
+  justify-content:space-between;padding:0 calc(var(--u)*2.5);z-index:5;font-size:calc(var(--u)*1.35);color:var(--soft)}
+body.dark #bar{color:var(--soft-dark)}
+#prog{display:flex;align-items:center;gap:calc(var(--u)*1.2);font-weight:600}
+#dots{display:flex;gap:calc(var(--u)*.5)}
+#dots i{width:calc(var(--u)*1);height:calc(var(--u)*1);border-radius:50%;border:calc(var(--u)*.16) solid currentColor;display:block}
+#dots i.on{background:currentColor}
+#tools{display:flex;gap:calc(var(--u)*.8)}
+.tool{font:600 calc(var(--u)*1.3)/1 var(--body);color:inherit;background:transparent;border:calc(var(--u)*.14) solid currentColor;
+  border-radius:calc(var(--u)*.6);padding:calc(var(--u)*.6) calc(var(--u)*1);cursor:pointer;display:flex;align-items:center;gap:calc(var(--u)*.5)}
+.tool:hover{background:rgba(127,140,165,.18)}
+.tool[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+body.dark .tool[aria-pressed="true"]{background:#fff;color:var(--ink);border-color:#fff}
+kbd{font:600 .85em var(--body);opacity:.75}
+
+button,a{-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:calc(var(--u)*.32) solid var(--ink);outline-offset:calc(var(--u)*.3)}
+body.dark :focus-visible{outline-color:#fff}
+h1:focus,h2:focus,p:focus{outline:none}
+
+/* screens */
+.screen{position:absolute;left:0;right:0;top:calc(var(--u)*5);bottom:calc(var(--u)*5);
+  padding:calc(var(--u)*.5) calc(var(--u)*6) 0;display:flex;flex-direction:column;
+  opacity:0;visibility:hidden;transform:translateY(calc(var(--u)*1.2));
+  transition:opacity .28s ease,transform .28s ease,visibility 0s linear .28s}
+.screen.active{opacity:1;visibility:visible;transform:none;transition:opacity .28s ease,transform .28s ease}
+h1,h2{font-family:var(--head);font-weight:700;letter-spacing:-.01em;line-height:1.08}
+h2{font-size:calc(var(--u)*4.4);margin-bottom:calc(var(--u)*1.6)}
+.foot{margin-top:auto;display:flex;align-items:center;justify-content:flex-end;gap:calc(var(--u)*2);min-height:calc(var(--u)*5.4)}
+.foot .line{margin-right:auto;font-weight:600;font-size:calc(var(--u)*2.2)}
+.fade{animation:fade .3s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(calc(var(--u)*.8))}to{opacity:1;transform:none}}
+
+.btn{font:600 calc(var(--u)*2.1)/1.1 var(--head);background:var(--blue);color:#fff;border:0;border-radius:calc(var(--u)*.9);
+  padding:calc(var(--u)*1.3) calc(var(--u)*2.6);cursor:pointer;display:inline-flex;align-items:center;gap:calc(var(--u)*.9);
+  transition:background-color .15s ease,transform .15s ease}
+.btn:hover{background:#1c469f}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;color:var(--blue);box-shadow:inset 0 0 0 calc(var(--u)*.2) var(--blue)}
+.btn.ghost:hover{background:#dfe7f7}
+body.dark .btn{background:var(--blue-dark);color:var(--ink)}
+body.dark .btn:hover{background:#b3cbff}
+
+/* S1 ransom note */
+#s1{align-items:center;justify-content:center;gap:calc(var(--u)*2.2);padding-top:0}
+.win{width:calc(var(--u)*84);background:var(--ink);border:calc(var(--u)*.25) solid var(--hot);border-radius:calc(var(--u)*1.2);
+  overflow:hidden;box-shadow:0 calc(var(--u)*1.5) calc(var(--u)*5) rgba(0,0,0,.5)}
+.win-top{display:flex;justify-content:space-between;align-items:center;background:var(--hot);color:var(--ink);
+  font:700 calc(var(--u)*1.4)/1 var(--body);padding:calc(var(--u)*.8) calc(var(--u)*1.6);letter-spacing:.04em;text-transform:uppercase}
+.win-body{display:grid;grid-template-columns:1.25fr 1fr;gap:calc(var(--u)*3.5);padding:calc(var(--u)*3) calc(var(--u)*3.5)}
+.win h1{color:var(--hot);font-size:calc(var(--u)*5.6);text-transform:uppercase;margin-bottom:calc(var(--u)*1.6)}
+.demand{font-size:calc(var(--u)*2.3);color:#fff;line-height:1.35}
+.demand b{color:var(--hot)}
+.timer-label{font:600 calc(var(--u)*1.4)/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--soft-dark)}
+#timer{font:700 calc(var(--u)*6.4)/1.1 var(--head);font-variant-numeric:tabular-nums;color:#fff;margin:calc(var(--u)*.5) 0 calc(var(--u)*1.8)}
+.files{list-style:none;display:grid;gap:calc(var(--u)*.8)}
+.files li{display:flex;align-items:center;gap:calc(var(--u)*1);background:#0C111D;border-radius:calc(var(--u)*.6);
+  padding:calc(var(--u)*.8) calc(var(--u)*1.2);font:500 calc(var(--u)*1.75)/1.2 ui-monospace,Menlo,Consolas,monospace;color:var(--soft-dark)}
+.files li svg{color:var(--hot);font-size:calc(var(--u)*2)}
+.files li b{color:var(--hot);font-weight:600}
+
+/* S2 */
+.facts{list-style:none;display:grid;gap:calc(var(--u)*1)}
+.facts li{display:flex;align-items:center;gap:calc(var(--u)*1.8);background:var(--mist);border-radius:calc(var(--u)*1);
+  padding:calc(var(--u)*1.1) calc(var(--u)*2.2);font-size:calc(var(--u)*2.25);font-weight:500}
+.facts li svg{font-size:calc(var(--u)*3.4);color:var(--blue)}
+.keyline{margin-top:calc(var(--u)*1.4);background:var(--ink);color:#fff;border-radius:calc(var(--u)*1);
+  padding:calc(var(--u)*1.2) calc(var(--u)*2.2);font:600 calc(var(--u)*2.4)/1.3 var(--head)}
+.keyline em{font-style:normal;color:var(--blue-dark)}
+
+/* S3 */
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--u)*2.5);flex:1;margin-bottom:calc(var(--u)*1)}
+.choice{font:600 calc(var(--u)*3.1)/1.22 var(--head);text-align:left;color:var(--ink);background:#fff;
+  border:calc(var(--u)*.3) solid var(--ink);border-radius:calc(var(--u)*1.4);padding:calc(var(--u)*3);cursor:pointer;
+  display:flex;flex-direction:column;gap:calc(var(--u)*1.5);transition:background-color .15s ease,transform .15s ease}
+.choice:hover{background:#dfe7f7;transform:translateY(calc(var(--u)*-.3))}
+.choice .tag{font:700 calc(var(--u)*1.6)/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--blue)}
+.choice svg{font-size:calc(var(--u)*6);color:var(--blue);margin-top:auto}
+.fb{border-radius:calc(var(--u)*1.4);padding:calc(var(--u)*2.6) calc(var(--u)*3);display:flex;gap:calc(var(--u)*2.2);align-items:flex-start}
+.fb.bad{background:var(--warn-bg);border-left:calc(var(--u)*1) solid var(--warn)}
+.fb.good{background:var(--ok-bg);border-left:calc(var(--u)*1) solid var(--ok)}
+.fb>svg{font-size:calc(var(--u)*6);stroke-width:2.2}
+.fb.bad>svg,.fb.bad .verdict{color:var(--warn)}
+.fb.good>svg,.fb.good .verdict{color:var(--ok)}
+.fb .picked{font:600 calc(var(--u)*1.5)/1.2 var(--body);color:var(--soft);margin-bottom:calc(var(--u)*.6)}
+.fb .verdict{font:700 calc(var(--u)*4.2)/1.05 var(--head);margin-bottom:calc(var(--u)*1)}
+.fb p.big{font-size:calc(var(--u)*2.7);font-weight:500;line-height:1.35}
+#s3 .fbwrap{flex:1;display:flex;flex-direction:column;justify-content:center}
+
+/* S4 */
+.calls{display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--u)*1.5);flex:1;margin-bottom:calc(var(--u)*1.2)}
+.call{font:inherit;color:var(--ink);text-align:left;background:var(--mist);border:calc(var(--u)*.25) dashed #7C8AA3;
+  border-radius:calc(var(--u)*1.2);padding:calc(var(--u)*1.5) calc(var(--u)*2);cursor:pointer;display:flex;align-items:center;
+  gap:calc(var(--u)*1.8);transition:background-color .2s ease,border-color .2s ease}
+.call:hover{background:#dfe7f7}
+.call .q{font:700 calc(var(--u)*2.4)/1 var(--head);color:var(--soft);display:flex;align-items:center;gap:calc(var(--u)*1.4)}
+.call .q span{width:calc(var(--u)*5);height:calc(var(--u)*5);border-radius:50%;background:#fff;display:grid;place-items:center;font-size:calc(var(--u)*2.6);color:var(--blue)}
+.call.open{background:#fff;border:calc(var(--u)*.25) solid var(--ink);cursor:default}
+.call .a{display:flex;align-items:center;gap:calc(var(--u)*1.8)}
+.call .a>svg{font-size:calc(var(--u)*4.4);color:var(--blue)}
+.call .a strong{display:block;font:700 calc(var(--u)*2.6)/1.15 var(--head);margin-bottom:calc(var(--u)*.4)}
+.call .a small{display:block;font-size:calc(var(--u)*1.8);line-height:1.3;color:var(--soft)}
+.call .a small b{color:var(--ink)}
+
+/* S5 */
+#s5 h2{font-size:calc(var(--u)*3.4);margin-bottom:calc(var(--u)*1)}
+.checks{display:flex;flex-direction:column;gap:calc(var(--u)*1);flex:1;min-height:0}
+.item{background:var(--mist);border-radius:calc(var(--u)*1.2);display:flex;flex-direction:column;min-height:0}
+.item.open{flex:1;background:#fff;box-shadow:inset 0 0 0 calc(var(--u)*.25) var(--ink)}
+.item-head{font:700 calc(var(--u)*2.5)/1.15 var(--head);color:var(--ink);text-align:left;background:transparent;border:0;cursor:pointer;
+  width:100%;display:flex;align-items:center;gap:calc(var(--u)*1.6);padding:calc(var(--u)*1.2) calc(var(--u)*2);border-radius:calc(var(--u)*1.2)}
+.checks:not(.has-open) .item-head{font-size:calc(var(--u)*3.2);padding:calc(var(--u)*3.2) calc(var(--u)*2.6)}
+#s5.opened h2{display:none}
+.has-open .item:not(.open) .item-head{font-size:calc(var(--u)*2);padding:calc(var(--u)*.9) calc(var(--u)*2)}
+.has-open .item:not(.open) .box{width:calc(var(--u)*2.6);height:calc(var(--u)*2.6)}
+.has-open .item:not(.open) .box svg{font-size:calc(var(--u)*2)}
+.item-head:hover{background:rgba(36,87,197,.1)}
+.box{width:calc(var(--u)*3.6);height:calc(var(--u)*3.6);flex:none;border:calc(var(--u)*.32) solid var(--ink);border-radius:calc(var(--u)*.6);
+  background:#fff;display:grid;place-items:center;color:#fff;transition:background-color .2s ease}
+.box svg{font-size:calc(var(--u)*2.8);stroke-width:3.2;opacity:0;transition:opacity .2s ease}
+.item.done .box{background:var(--ok);border-color:var(--ok)}
+.item.done .box svg{opacity:1}
+.item-head .state{margin-left:auto;font:700 calc(var(--u)*1.4)/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--soft);white-space:nowrap}
+.item.done .state{color:var(--ok)}
+.item-body{padding:0 calc(var(--u)*2) calc(var(--u)*1.6);flex:1;display:flex;flex-direction:column;min-height:0}
+.step{flex:1;display:flex;flex-direction:column;min-height:0}
+.ask{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--u)*2.4);text-align:center}
+.ask p{font:700 calc(var(--u)*4)/1.1 var(--head)}
+.rule{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(var(--u)*1.4);flex:1;min-height:0}
+.rule>div{background:var(--paper);border-radius:calc(var(--u)*1);padding:calc(var(--u)*1) calc(var(--u)*1.6);display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:center}
+.rule .hd{display:flex;align-items:center;gap:calc(var(--u)*1);margin-bottom:calc(var(--u)*.8)}
+.rule .n{font:700 calc(var(--u)*5.4)/1 var(--head);color:var(--blue)}
+.rule .t{font:700 calc(var(--u)*2.3)/1.1 var(--head);text-align:left}
+.rule svg.pic{width:calc(var(--u)*19.2);height:calc(var(--u)*7);display:block}
+.rule .c{font-size:calc(var(--u)*1.7);color:var(--soft);font-weight:500;margin-top:calc(var(--u)*.4)}
+.rule>div.off{background:var(--ink);color:#fff}
+.rule>div.off .n{color:var(--blue-dark)} .rule>div.off .c{color:var(--soft-dark)}
+.rowend{display:flex;align-items:center;gap:calc(var(--u)*1.6);margin-top:calc(var(--u)*1.2)}
+.warnline{flex:1;background:var(--warn-bg);border-left:calc(var(--u)*.7) solid var(--warn);border-radius:calc(var(--u)*.7);
+  padding:calc(var(--u)*.9) calc(var(--u)*1.4);font-size:calc(var(--u)*1.75);font-weight:600;display:flex;gap:calc(var(--u)*1);align-items:center}
+.warnline svg{color:var(--warn);font-size:calc(var(--u)*2.6)}
+.rowend .btn{font-size:calc(var(--u)*1.9);padding:calc(var(--u)*1.1) calc(var(--u)*2)}
+.quiz-q{font:700 calc(var(--u)*2.7)/1.1 var(--head);margin-bottom:calc(var(--u)*1)}
+.opts{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(var(--u)*1.3);flex:1;min-height:0}
+.opt{font:600 calc(var(--u)*2.1)/1.25 var(--head);color:var(--ink);text-align:left;background:var(--paper);
+  border:calc(var(--u)*.25) solid var(--ink);border-radius:calc(var(--u)*1);padding:calc(var(--u)*1.4) calc(var(--u)*1.6);cursor:pointer;
+  display:flex;flex-direction:column;gap:calc(var(--u)*.8);transition:background-color .15s ease}
+.opt:hover{background:#dfe7f7}
+.opt .res{margin-top:auto;font:600 calc(var(--u)*1.75)/1.3 var(--body);display:flex;gap:calc(var(--u)*.8);align-items:flex-start}
+.opt .res svg{font-size:calc(var(--u)*2.6);stroke-width:2.4;margin-top:calc(var(--u)*-.1)}
+.opt.bad{background:var(--warn-bg);border-color:var(--warn)} .opt.bad .res{color:#8a3608}
+.opt.good{background:var(--ok-bg);border-color:var(--ok)} .opt.good .res{color:var(--ok)}
+.some{display:grid;grid-template-columns:auto 1fr;gap:calc(var(--u)*3);align-items:center;flex:1}
+.some .word{font:700 calc(var(--u)*4.6)/1.15 var(--head);color:var(--blue)}
+.some p{font-size:calc(var(--u)*1.9);line-height:1.36}
+.some p+p{margin-top:calc(var(--u)*.9)}
+.some a{display:inline-flex;align-items:center;gap:calc(var(--u)*.7);font:700 calc(var(--u)*2.4)/1.2 var(--head);color:var(--blue);
+  margin-top:calc(var(--u)*.8);text-underline-offset:.18em}
+.some .count{font-weight:700}
+#s5 .foot{min-height:calc(var(--u)*4.6);margin-top:calc(var(--u)*1)}
+#s5 .foot .btn{font-size:calc(var(--u)*1.9);padding:calc(var(--u)*1.05) calc(var(--u)*2.2)}
+
+/* S6 */
+#s6{align-items:center;justify-content:center;text-align:center;gap:calc(var(--u)*2)}
+#s6 .badge{width:calc(var(--u)*10);height:calc(var(--u)*10);border-radius:50%;background:var(--ok-bg);color:var(--ok);display:grid;place-items:center}
+#s6 .badge svg{font-size:calc(var(--u)*6)}
+#s6 h2{font-size:calc(var(--u)*8);margin:0}
+#s6 .msg{background:var(--ink);color:#fff;border-radius:calc(var(--u)*1.4);padding:calc(var(--u)*2.4) calc(var(--u)*3.5);
+  font:700 calc(var(--u)*3.8)/1.2 var(--head);max-width:calc(var(--u)*78)}
+#s6 .msg em{font-style:normal;color:var(--blue-dark)}
+#s6 .smallline{font-size:calc(var(--u)*2);color:var(--soft);font-weight:500}
+
+/* presenter notes */
+#notes{position:absolute;left:calc(var(--u)*2.5);right:calc(var(--u)*2.5);bottom:calc(var(--u)*.7);min-height:calc(var(--u)*3.6);
+  background:#fff;color:var(--ink);border:calc(var(--u)*.16) solid #7C8AA3;border-radius:calc(var(--u)*.7);
+  padding:calc(var(--u)*.7) calc(var(--u)*1.4);font-size:calc(var(--u)*1.45);display:flex;align-items:center;gap:calc(var(--u)*1);z-index:6}
+#notes b{font:700 calc(var(--u)*1.2)/1 var(--body);letter-spacing:.08em;text-transform:uppercase;background:var(--ink);color:#fff;
+  border-radius:calc(var(--u)*.4);padding:calc(var(--u)*.45) calc(var(--u)*.7)}
+#notes i{font-style:normal;color:var(--soft);margin-left:auto;white-space:nowrap;font-size:calc(var(--u)*1.2)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none !important;animation:none !important}
+  .screen{transform:none}
+}
+</style>
+</head>
+<body class="dark">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 8l8 8M16 8l-8 8"/></symbol>
+    <symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-7"/></symbol>
+    <symbol id="i-tick" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-unlock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><path d="M6 3h3l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v3a3 3 0 0 1-3 3A15 15 0 0 1 3 6a3 3 0 0 1 3-3z"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.5 9.2c-.5-.8-1.4-1.2-2.5-1.2-1.5 0-2.6.8-2.6 2s1 1.7 2.6 2 2.8.8 2.8 2.1-1.2 2-2.8 2c-1.2 0-2.2-.5-2.7-1.3M12 6v2M12 16v2"/></symbol>
+    <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 3v5M15 3v5M7 8h10v3a5 5 0 0 1-10 0zM12 16v5"/><path d="M3 21L21 3" stroke-width="2.4"/></symbol>
+    <symbol id="i-full" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.5-5.8M4 4v5h5"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+  </defs>
+</svg>
+
+<div id="stage">
+  <div id="bar">
+    <div id="prog"><span id="dots" aria-hidden="true"></span><span id="progtxt">Room 1 of 5</span></div>
+    <div id="tools">
+      <button class="tool" id="btn-notes" type="button" aria-pressed="false" title="Presenter notes (N). Keys: right arrow or Page Down = next, left arrow or Page Up = back, F = fullscreen">Notes <kbd>N</kbd></button>
+      <button class="tool" id="btn-full" type="button" title="Fullscreen (F)"><svg class="i"><use href="#i-full"/></svg>Fullscreen <kbd>F</kbd></button>
+      <button class="tool" id="btn-restart" type="button"><svg class="i"><use href="#i-redo"/></svg>Restart</button>
+    </div>
+  </div>
+
+  <!-- S1 -->
+  <section class="screen active" id="s1" aria-label="The ransom note">
+    <div class="win">
+      <div class="win-top"><span>Office PC · Helping Hands Luxembourg</span><span>Training simulation · fictional</span></div>
+      <div class="win-body">
+        <div>
+          <h1 tabindex="-1">Your files are encrypted</h1>
+          <p class="demand">Pay <b>2 Bitcoin</b> within <b>72 hours</b> or your files are gone forever and your data will be published.</p>
+        </div>
+        <div>
+          <div class="timer-label">Time left</div>
+          <div id="timer" aria-hidden="true">71:59:59</div>
+          <ul class="files" aria-label="Locked files">
+            <li><svg class="i"><use href="#i-lock"/></svg><span>donors_2026.xlsx<b>.locked</b></span></li>
+            <li><svg class="i"><use href="#i-lock"/></svg><span>volunteers.docx<b>.locked</b></span></li>
+            <li><svg class="i"><use href="#i-lock"/></svg><span>budget.pdf<b>.locked</b></span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <button class="btn" type="button" data-go="1">What’s happening? <svg class="i"><use href="#i-arrow"/></svg></button>
+  </section>
+
+  <!-- S2 -->
+  <section class="screen" id="s2" aria-label="What’s happening?">
+    <h2 tabindex="-1">This is ransomware.</h2>
+    <ul class="facts">
+      <li><svg class="i"><use href="#i-lock"/></svg><span>Malicious software that locks (encrypts) your files and asks for money to unlock them.</span></li>
+      <li><svg class="i"><use href="#i-copy"/></svg><span>Often it steals a copy first and threatens to publish it.</span></li>
+      <li><svg class="i"><use href="#i-mail"/></svg><span>It usually gets in through a phishing email or a stolen password.</span></li>
+    </ul>
+    <p class="keyline">Your files are still there, but scrambled. <em>Only the attackers have the key.</em></p>
+    <div class="foot"><button class="btn" type="button" data-go="2">Now what? <svg class="i"><use href="#i-arrow"/></svg></button></div>
+  </section>
+
+  <!-- S3 -->
+  <section class="screen" id="s3" aria-label="Now what?">
+    <h2 tabindex="-1">Now what?</h2>
+    <div class="choices" id="s3-options">
+      <button class="choice" type="button" id="s3-pay"><span class="tag">Option 1</span><span>Pay the ransom</span><svg class="i"><use href="#i-coin"/></svg></button>
+      <button class="choice" type="button" id="s3-cut"><span class="tag">Option 2</span><span>Unplug the network cable, turn off the Wi-Fi and unplug any USB drives</span><svg class="i"><use href="#i-plug"/></svg></button>
+    </div>
+    <div class="fbwrap" id="s3-wrong" hidden>
+      <div class="fb bad fade" role="status">
+        <svg class="i" role="img" aria-label="Wrong"><use href="#i-x"/></svg>
+        <div><p class="picked">Option 1: Pay the ransom</p><p class="verdict">Well no!</p>
+        <p class="big">We lost money, we’re funding criminals, and there’s no guarantee we get the files back, or that they delete the stolen copy.</p></div>
+      </div>
+    </div>
+    <div class="fbwrap" id="s3-right" hidden>
+      <div class="fb good fade" role="status">
+        <svg class="i" role="img" aria-label="Correct"><use href="#i-ok"/></svg>
+        <div><p class="picked">Option 2: Cut the connections</p><p class="verdict">Right!</p>
+        <p class="big">Cutting it off stops the ransomware from spreading to shared drives and to your backup drive. Leave the computer on and don’t try to fix it yourself.</p></div>
+      </div>
+    </div>
+    <div class="foot">
+      <button class="btn" type="button" id="s3-retry" hidden><svg class="i"><use href="#i-redo"/></svg> Try again</button>
+      <button class="btn" type="button" id="s3-next" hidden>Next <svg class="i"><use href="#i-arrow"/></svg></button>
+    </div>
+  </section>
+
+  <!-- S4 -->
+  <section class="screen" id="s4" aria-label="Raise the alarm">
+    <h2 tabindex="-1">We need to make some calls.</h2>
+    <div class="calls" id="calls">
+      <button class="call" type="button" data-say="Your IT contact or manager. By phone, because email may be down too.">
+        <span class="q"><span>1</span>Who first?</span>
+        <span class="a" hidden><svg class="i"><use href="#i-phone"/></svg><span><strong>Your IT contact or manager</strong><small>By phone, because email may be down too.</small></span></span>
+      </button>
+      <button class="call" type="button" data-say="CIRCL, the CERT for the private sector, communes and non-governmental entities in Luxembourg. It helps NGOs. circl.lu">
+        <span class="q"><span>2</span>Who helps us?</span>
+        <span class="a" hidden><svg class="i"><use href="#i-phone"/></svg><span><strong>CIRCL</strong><small>The CERT for the private sector, communes and non-governmental entities in Luxembourg. It helps NGOs. <b>circl.lu</b></small></span></span>
+      </button>
+      <button class="call" type="button" data-say="The police. Ransomware is a crime.">
+        <span class="q"><span>3</span>Who else?</span>
+        <span class="a" hidden><svg class="i"><use href="#i-phone"/></svg><span><strong>The police</strong><small>Ransomware is a crime.</small></span></span>
+      </button>
+      <button class="call" type="button" data-say="The CNPD, the data protection authority. If personal data is affected, notify within 72 hours.">
+        <span class="q"><span>4</span>And in writing?</span>
+        <span class="a" hidden><svg class="i"><use href="#i-note"/></svg><span><strong>The CNPD</strong><small>The data protection authority. If personal data is affected, notify within 72 hours.</small></span></span>
+      </button>
+    </div>
+    <div class="foot">
+      <p class="line" id="s4-line" hidden>Good, people know. But how do we get our data back?</p>
+      <button class="btn" type="button" id="s4-btn">Next call <svg class="i"><use href="#i-arrow"/></svg></button>
+    </div>
+  </section>
+
+  <!-- S5 -->
+  <section class="screen" id="s5" aria-label="Let’s check our checkboxes">
+    <h2 tabindex="-1">Let’s check our checkboxes</h2>
+    <div class="checks" id="checks">
+      <div class="item" id="it1">
+        <button class="item-head" type="button" id="it1-head" aria-expanded="false" aria-controls="it1-body">
+          <span class="box"><svg class="i"><use href="#i-tick"/></svg></span><span>Do we follow the 3-2-1 backup rule?</span><span class="state" id="it1-state">Not checked</span>
+        </button>
+        <div class="item-body" id="it1-body" hidden>
+          <div class="step ask" id="st0">
+            <p>Who here knows the 3-2-1 rule?</p>
+            <button class="btn" type="button" id="btn-rule">Show the rule</button>
+          </div>
+          <div class="step fade" id="st1" hidden>
+            <div class="rule" role="img" aria-label="Drawing of the 3-2-1 rule: 3 copies of your data, on 2 different kinds of storage, with 1 copy kept offline.">
+              <div><span class="hd"><span class="n">3</span><span class="t">copies of your data</span></span>
+                <svg class="pic" viewBox="0 0 170 62" fill="none" stroke="#172033" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+                  <g id="docg"><path d="M22 6h20l10 10v40H22z" fill="#fff"/><path d="M42 6v10h10M29 28h16M29 37h16M29 46h10"/></g>
+                  <use href="#docg" x="48"/><use href="#docg" x="96"/>
+                </svg><span class="c">the original + 2 backups</span></div>
+              <div><span class="hd"><span class="n">2</span><span class="t">kinds of storage</span></span>
+                <svg class="pic" viewBox="0 0 170 62" fill="none" stroke="#172033" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+                  <rect x="14" y="6" width="62" height="40" rx="4" fill="#fff"/><path d="M6 56h78l-8-10H14z" fill="#fff"/>
+                  <path d="M93 31h10M98 26v10" stroke="#2457C5" stroke-width="4"/>
+                  <rect x="114" y="10" width="44" height="46" rx="6" fill="#fff"/><circle cx="136" cy="29" r="9"/><path d="M124 48h8"/><circle cx="148" cy="48" r="1.6" fill="#172033"/>
+                </svg><span class="c">computer + external drive</span></div>
+              <div class="off"><span class="hd"><span class="n">1</span><span class="t">copy kept offline</span></span>
+                <svg class="pic" viewBox="0 0 170 62" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+                  <rect x="8" y="4" width="104" height="54" rx="5"/><path d="M8 26h104"/><path d="M50 15h20"/>
+                  <rect x="40" y="33" width="40" height="18" rx="4" fill="#8FB3FF" stroke="#8FB3FF"/><circle cx="52" cy="42" r="4" stroke="#172033" stroke-width="2.5"/>
+                  <path d="M132 20v8M146 20v8M128 28h22v6a11 11 0 0 1-22 0zM139 45v11" stroke="#B9C3D4"/><path d="M124 56L156 16" stroke="#FF9A4D" stroke-width="4"/>
+                </svg><span class="c">unplugged, in a drawer</span></div>
+            </div>
+            <div class="rowend">
+              <p class="warnline"><svg class="i" role="img" aria-label="Warning"><use href="#i-warn"/></svg><span>Google Drive or OneDrive syncing is not a backup. It syncs the locked files too.</span></p>
+              <button class="btn" type="button" id="btn-quiz">Quick quiz <svg class="i"><use href="#i-arrow"/></svg></button>
+            </div>
+          </div>
+          <div class="step fade" id="st2" hidden>
+            <p class="quiz-q" id="quiz-q" tabindex="-1">Which copy saves us?</p>
+            <div class="opts" id="opts">
+              <button class="opt" type="button" data-k="a" data-ok="0" data-fb="Locked too."><span>The USB drive that was plugged in</span><span class="res" hidden><svg class="i" role="img" aria-label="Wrong"><use href="#i-x"/></svg><span>Wrong. Locked too.</span></span></button>
+              <button class="opt" type="button" data-k="b" data-ok="0" data-fb="It synced the locked files."><span>The Google Drive folder</span><span class="res" hidden><svg class="i" role="img" aria-label="Wrong"><use href="#i-x"/></svg><span>Wrong. It synced the locked files.</span></span></button>
+              <button class="opt" type="button" data-k="c" data-ok="1" data-fb="We clean the computer and restore. We only lose work since Friday."><span>The drive in the drawer, unplugged since Friday</span><span class="res" hidden><svg class="i" role="img" aria-label="Correct"><use href="#i-ok"/></svg><span>Right! We clean the computer and restore. We only lose work since Friday.</span></span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="item" id="it2">
+        <button class="item-head" type="button" id="it2-head" aria-expanded="false" aria-controls="it2-body">
+          <span class="box"><svg class="i"><use href="#i-tick"/></svg></span><span>Can we get the files back without paying and without backups?</span><span class="state" id="it2-state">Not checked</span>
+        </button>
+        <div class="item-body" id="it2-body" hidden>
+          <div class="some fade">
+            <p class="word" id="some-word" tabindex="-1">Sometimes.</p>
+            <div>
+              <p><strong>No More Ransom</strong>, a free project by Europol and the police, offers free decryption tools for some ransomware families. Its <strong>Crypto Sheriff</strong> tool helps find a decryptor from two encrypted files and the ransom note.</p>
+              <p class="count">Worth a try, but it only works for some ransomware. Don’t count on it. Count on your backups.</p>
+              <a href="https://www.nomoreransom.org" target="_blank" rel="noopener noreferrer">nomoreransom.org <svg class="i"><use href="#i-ext"/></svg><span class="sr">(opens in a new tab)</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><button class="btn ghost" type="button" id="s5-next">Next <svg class="i"><use href="#i-arrow"/></svg></button></div>
+  </section>
+
+  <!-- S6 -->
+  <section class="screen" id="s6" aria-label="You escaped!">
+    <div class="badge"><svg class="i"><use href="#i-unlock"/></svg></div>
+    <h2 tabindex="-1">You escaped!</h2>
+    <p class="msg">Share only with who needs it, and <em>keep one backup offline.</em></p>
+    <p class="smallline">If your answer to the first checkbox was “no”, that’s your first step this week.</p>
+    <button class="btn ghost" type="button" id="s6-restart"><svg class="i"><use href="#i-redo"/></svg> Restart</button>
+  </section>
+
+  <div id="notes" hidden><b>Say</b><span id="notes-txt"></span></div>
+  <div class="sr" id="live" aria-live="polite"></div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var $ = function(id){ return document.getElementById(id); };
+  var screens = ['s1','s2','s3','s4','s5','s6'].map($);
+  var CUES = [
+    'It’s Monday morning. You turn on the office computer and see this. What’s happening?',
+    'Your files are still on the computer, but they’re scrambled, and only the attackers have the key.',
+    'Hands up: who would pay? (Click Option 1 first.)',
+    'Good, people know. But how do we get our data back?',
+    'Who here knows the 3-2-1 rule?',
+    'If your answer to the first checkbox was “no”, that’s your first step this week.'
+  ];
+  var S, timerId = null, timerStart = 0;
+  var calls = Array.prototype.slice.call(document.querySelectorAll('.call'));
+  var opts = Array.prototype.slice.call(document.querySelectorAll('.opt'));
+
+  function fresh(){
+    return {screen:0, s3:'options', s3tried:false, s4:[false,false,false,false],
+            open:0, step:0, quiz:{}, tick1:false, tick2:false, notes:S ? S.notes : false};
+  }
+  function say(t){ var l=$('live'); l.textContent=''; setTimeout(function(){ l.textContent=t; },30); }
+  function focusEl(el){ if(el){ try{ el.focus({preventScroll:true}); }catch(e){ el.focus(); } } }
+  function show(el,on){ el.hidden = !on; }
+
+  var dots = $('dots');
+  for(var d=0; d<5; d++){ dots.appendChild(document.createElement('i')); }
+
+  function render(){
+    screens.forEach(function(s,i){ s.classList.toggle('active', i===S.screen); });
+    document.body.classList.toggle('dark', S.screen===0);
+    $('progtxt').textContent = S.screen<5 ? 'Room '+(S.screen+1)+' of 5' : 'Escaped!';
+    Array.prototype.forEach.call(dots.children, function(el,i){ el.classList.toggle('on', i<=S.screen-(S.screen===5?1:0)); });
+    show($('notes'), S.notes);
+    $('btn-notes').setAttribute('aria-pressed', S.notes ? 'true':'false');
+    $('notes-txt').textContent = CUES[S.screen];
+
+    // S3
+    show($('s3-options'), S.s3==='options');
+    show($('s3-wrong'), S.s3==='wrong');
+    show($('s3-right'), S.s3==='right');
+    show($('s3-retry'), S.s3==='wrong');
+    show($('s3-next'), S.s3==='right');
+
+    // S4
+    var all = true;
+    calls.forEach(function(c,i){
+      c.classList.toggle('open', S.s4[i]);
+      show(c.querySelector('.q'), !S.s4[i]);
+      show(c.querySelector('.a'), S.s4[i]);
+      if(!S.s4[i]) all = false;
+    });
+    show($('s4-line'), all);
+    $('s4-btn').firstChild.nodeValue = all ? 'Get our data back ' : 'Next call ';
+
+    // S5
+    $('checks').classList.toggle('has-open', S.open!==0);
+    $('s5').classList.toggle('opened', S.open!==0);
+    [1,2].forEach(function(n){
+      var it=$('it'+n), done = n===1 ? S.tick1 : S.tick2;
+      it.classList.toggle('open', S.open===n);
+      it.classList.toggle('done', done);
+      $('it'+n+'-head').setAttribute('aria-expanded', S.open===n ? 'true':'false');
+      $('it'+n+'-state').textContent = done ? 'Checked' : 'Not checked';
+      show($('it'+n+'-body'), S.open===n);
+    });
+    show($('st0'), S.step===0); show($('st1'), S.step===1); show($('st2'), S.step===2);
+    opts.forEach(function(o){
+      var picked = !!S.quiz[o.dataset.k], ok = o.dataset.ok==='1';
+      o.classList.toggle('bad', picked && !ok);
+      o.classList.toggle('good', picked && ok);
+      show(o.querySelector('.res'), picked);
+    });
+    var both = S.tick1 && S.tick2;
+    $('s5-next').classList.toggle('ghost', !both);
+    $('s5-next').firstChild.nodeValue = both ? 'We’re out ' : 'Next ';
+  }
+
+  function go(n){
+    S.screen = Math.max(0, Math.min(5, n));
+    if(S.screen===0) startTimer();
+    render();
+    focusEl(screens[S.screen].querySelector('h1,h2'));
+  }
+  function restart(){ S = fresh(); go(0); }
+
+  /* cosmetic countdown */
+  function pad(n){ return (n<10?'0':'')+n; }
+  function tick(){
+    var left = Math.max(0, 259199 - Math.floor((Date.now()-timerStart)/1000));
+    $('timer').textContent = pad(Math.floor(left/3600))+':'+pad(Math.floor(left%3600/60))+':'+pad(left%60);
+  }
+  function startTimer(){ timerStart = Date.now(); tick(); if(!timerId) timerId = setInterval(tick, 1000); }
+
+  /* S3 */
+  function s3(state){
+    S.s3 = state; if(state==='wrong') S.s3tried = true;
+    render();
+    if(state==='wrong'){ say('Wrong. Well no! We lost money, we’re funding criminals, and there’s no guarantee we get the files back, or that they delete the stolen copy.'); focusEl($('s3-retry')); }
+    else if(state==='right'){ say('Right! Cutting it off stops the ransomware from spreading to shared drives and to your backup drive. Leave the computer on and don’t try to fix it yourself.'); focusEl($('s3-next')); }
+    else focusEl($('s3').querySelector('h2'));
+  }
+  /* S4 */
+  function reveal(i){
+    if(S.s4[i]) return;
+    S.s4[i] = true; render(); say(calls[i].dataset.say); focusEl($('s4-btn'));
+  }
+  function s4step(){
+    var i = S.s4.indexOf(false);
+    if(i>=0) reveal(i); else go(4);
+  }
+  /* S5 */
+  function openItem(n){
+    S.open = (S.open===n) ? 0 : n;
+    if(S.open===2 && !S.tick2){ S.tick2 = true; say('Sometimes. No More Ransom offers free decryption tools for some ransomware families. Don’t count on it. Count on your backups. Checked.'); }
+    render();
+    focusStep();
+  }
+  function focusStep(){
+    if(S.open===1) focusEl(S.step===0 ? $('btn-rule') : S.step===1 ? $('btn-quiz') : $('quiz-q'));
+    else if(S.open===2) focusEl($('some-word'));
+  }
+  function setStep(n){ S.step = n; render(); focusStep(); }
+  function pick(o){
+    S.quiz[o.dataset.k] = true;
+    var ok = o.dataset.ok==='1';
+    if(ok) S.tick1 = true;
+    render();
+    say((ok ? 'Right! ' : 'Wrong. ') + o.dataset.fb + (ok ? ' Checked.' : ''));
+  }
+  function s5step(){
+    if(S.open===0){
+      if(!S.tick1) openItem(1);
+      else if(!S.tick2) openItem(2);
+      else go(5);
+    } else if(S.open===1){
+      if(S.step<2){ setStep(S.step+1); return; }
+      var next = opts.filter(function(o){ return !S.quiz[o.dataset.k]; })[0];
+      if(next){ pick(next); }
+      else if(!S.tick2) openItem(2);
+      else { S.open=0; render(); focusEl($('s5-next')); }
+    } else {
+      if(S.tick1) go(5); else openItem(1);
+    }
+  }
+
+  /* one "advance" for clicker / arrow keys: follows the planned path */
+  function advance(){
+    switch(S.screen){
+      case 0: go(1); break;
+      case 1: go(2); break;
+      case 2:
+        if(S.s3==='options') s3(S.s3tried ? 'right' : 'wrong');
+        else if(S.s3==='wrong') s3('options');
+        else go(3);
+        break;
+      case 3: s4step(); break;
+      case 4: s5step(); break;
+      default: break;
+    }
+  }
+  function back(){
+    if(S.screen===2 && S.s3!=='options'){ s3('options'); return; }
+    if(S.screen===4 && S.open!==0){
+      if(S.open===1 && S.step>0){ setStep(S.step-1); return; }
+      S.open=0; render(); return;
+    }
+    if(S.screen>0) go(S.screen-1);
+  }
+
+  function toggleNotes(){ S.notes = !S.notes; render(); }
+  function toggleFull(){
+    try{
+      var d = document, el = d.documentElement;
+      if(d.fullscreenElement || d.webkitFullscreenElement){
+        var x = (d.exitFullscreen || d.webkitExitFullscreen).call(d); if(x && x.catch) x.catch(function(){});
+      } else {
+        var r = (el.requestFullscreen || el.webkitRequestFullscreen).call(el); if(r && r.catch) r.catch(function(){});
+      }
+    }catch(e){}
+  }
+
+  /* wiring */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-go]'), function(b){
+    b.addEventListener('click', function(){ go(+b.dataset.go); });
+  });
+  $('s3-pay').addEventListener('click', function(){ s3('wrong'); });
+  $('s3-cut').addEventListener('click', function(){ s3('right'); });
+  $('s3-retry').addEventListener('click', function(){ s3('options'); });
+  $('s3-next').addEventListener('click', function(){ go(3); });
+  calls.forEach(function(c,i){ c.addEventListener('click', function(){ reveal(i); }); });
+  $('s4-btn').addEventListener('click', s4step);
+  $('it1-head').addEventListener('click', function(){ openItem(1); });
+  $('it2-head').addEventListener('click', function(){ openItem(2); });
+  $('btn-rule').addEventListener('click', function(){ setStep(1); });
+  $('btn-quiz').addEventListener('click', function(){ setStep(2); });
+  opts.forEach(function(o){ o.addEventListener('click', function(){ pick(o); }); });
+  $('s5-next').addEventListener('click', function(){ go(5); });
+  $('s6-restart').addEventListener('click', restart);
+  $('btn-restart').addEventListener('click', restart);
+  $('btn-notes').addEventListener('click', toggleNotes);
+  $('btn-full').addEventListener('click', toggleFull);
+
+  document.addEventListener('keydown', function(e){
+    if(e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if(k==='ArrowRight' || k==='ArrowDown' || k==='PageDown'){ e.preventDefault(); advance(); return; }
+    if(k==='ArrowLeft' || k==='ArrowUp' || k==='PageUp'){ e.preventDefault(); back(); return; }
+    if(k==='n' || k==='N'){ toggleNotes(); return; }
+    if(k==='f' || k==='F'){ toggleFull(); return; }
+    if(k==='Enter' || k===' ' || k==='Spacebar'){
+      var a = document.activeElement;
+      var live = a && (a.tagName==='BUTTON' || a.tagName==='A') && a.offsetParent!==null;
+      if(live) return;           /* let the focused button or link do its job */
+      e.preventDefault(); advance();
+    }
+  });
+
+  S = fresh();
+  startTimer();
+  render();
+})();
+</script>
+
+<!-- Course navigation (Cybersecurity for NGOs) -->
+<style>
+  .course-nav{position:fixed;right:10px;bottom:10px;z-index:50;display:flex;gap:6px}
+  .course-nav a{padding:7px 12px;border-radius:999px;background:#fff;color:#172033;font:600 13px/1 Inter,Arial,sans-serif;
+    text-decoration:none;box-shadow:0 3px 10px rgba(0,0,0,.3);border:1px solid #c7c7c7}
+  .course-nav a.next{background:#2457C5;color:#fff;border-color:#2457C5}
+</style>
+<nav class="course-nav" aria-label="Course">
+  <a href="index.html">☰ Course menu</a>
+  <a class="next" href="bingo.html">Cyber Bingo →</a>
+</nav>
+</body>
+</html>

@@ -56,16 +56,13 @@ function renderQuiz(mode, skipExternal) {
   const tool = CONFIG.quizTool || "the quiz tool";
   const doneId = mode === "start" ? "quiz" : "final";
 
-  // 1) External quiz first (Genially), local quiz on this page as backup
+  // 1) The quiz runs on Genially only
   if (ext && ext.url && !skipExternal) {
     markDone(doneId);
     app.innerHTML = `
       <div class="card"><p style="color:var(--ink)">We do this quiz together on <b>${esc(tool)}</b>.</p>
         <a class="btn primary" href="${esc(ext.url)}" target="_blank" rel="noopener">▶ Open the quiz on ${esc(tool)}</a>
-        <p class="small" style="margin-top:10px">${esc(ext.note || "")}</p></div>
-      <p class="small">${esc(tool)} not working? Answer the same questions here instead:</p>
-      <button class="btn ghost" id="local">Answer on this page</button>`;
-    $("#local").onclick = () => renderQuiz(mode, true);
+        <p class="small" style="margin-top:10px">${esc(ext.note || "")}</p></div>`;
     return;
   }
 
