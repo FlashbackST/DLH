@@ -75,6 +75,14 @@
   .cell.flag .k{color:var(--red)} .cell.habit .k{color:var(--green)} .cell.weak .k{color:var(--purple)} .cell.trap .k{color:#e07000}
   .risk{display:inline-block;background:#ffd400;color:#c00000;font-weight:900;border-radius:4px;padding:0 4px;margin-left:2px;border:1.5px solid #c00000}
   .cell.on{background:#fff4c2;border-color:#e3a800}
+  .cell.ok{background:#d9f5dc;border-color:#1e9e3e;box-shadow:inset 0 0 0 2px #1e9e3e}
+  .cell.bad{background:#ffe0e0;border-color:#d11;box-shadow:inset 0 0 0 2px #d11;animation:shake .4s}
+  @keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+  .qpicks{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:14px;font-weight:700;color:var(--navy)}
+  .qpicks i{width:14px;height:14px;border-radius:50%;border:2px solid #e3a800;background:#fff}.qpicks i.on{background:#ffd400}
+  .qpicks span{color:var(--muted);font-weight:600}
+  .qnote{font-size:13px;color:#c00000;font-weight:700;max-height:0;overflow:hidden;transition:max-height .2s}.qnote.show{max-height:40px;margin-top:4px}
+  .qres{background:#d9f5dc;color:#11632a;border-radius:8px;padding:6px 10px;font-size:14px;margin-bottom:8px}
   .cell.win{background:#d9f5e5;border-color:var(--green)}
   .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;margin:10px 0;color:var(--muted)}
   .legend b{font-weight:800}
@@ -225,7 +233,7 @@ function myId(){ let id = store.get("bingoPid", null); if (!id) { id = Math.rand
 function renderIntro(){
   clearInterval(window._qTimer); clearInterval(window._gPoll);
   const old = store.get("bingoStart", null);   // forget a game that ended long ago
-  if (old && Date.now() - old > (SITUATIONS.length * SEC + 600) * 1000) { store.set("bingoStart", null); store.set("bingoGame", null); store.set("marked5e", []); }
+  if (old && Date.now() - old > (SITUATIONS.length * SEC + 600) * 1000) { store.set("bingoStart", null); store.set("bingoGame", null); store.set("picks5e", {}); }
   const pats = [["Row",[10,11,12,13,14]],["Column",[2,7,12,17,22]],["Diagonal",[0,6,12,18,24]],["4 corners",[0,4,20,24]]];
   $("#app").innerHTML = `
     <section class="intro">
@@ -236,7 +244,7 @@ function renderIntro(){
         <li><b style="color:var(--green)">Good habit</b> <span>that helps</span></li>
         <li><b style="color:#e07000">Trap</b> <span>the wrong reaction to avoid</span></li>
       </ul>
-      <p class="muted">Wrong? Tap the square again to remove it.</p>
+      <p class="muted">You have <b>3 picks per situation</b>. Changed your mind? Tap your pick again. After 1 minute the right squares turn <b style="color:#1e9e3e">green</b> – only green squares count for Bingo.</p>
     </section>
     <section class="intro">
       <h2>How to win</h2>
@@ -287,7 +295,7 @@ function renderIntro(){
 function stoppedByTrainer(){
   clearInterval(window._qTimer); clearInterval(window._gPoll);
   ["bingoStart","bingoGame"].forEach(k => store.set(k, null)); store.set("bingoStarted", false);
-  store.set("marked5e", []); store.set("order5e", null);          // next game = fresh card
+  store.set("picks5e", {}); store.set("order5e", null);          // next game = fresh card
   renderIntro(); window.scrollTo(0,0);
   const e = document.getElementById("err"); if (e) e.textContent = "The trainer stopped the game. Type the new code to join the next one.";
 }
@@ -329,9 +337,17 @@ function renderCard(){
   }
   try{ const d = JSON.parse(localStorage.getItem("ngo1_done") || "{}"); d.bingo = true; localStorage.setItem("ngo1_done", JSON.stringify(d)); }catch(e){}
   let order = store.get("order5e", null); if (!order || order.length !== 25) { order = makeCard(); store.set("order5e", order); }
-  let marked = store.get("marked5e", []);
-  const isOn = i => order[i] === "FREE" || marked.includes(order[i]);
+  // picks per situation: { "0": [ids], "1": [ids], ... } – max 3 per situation
+  let picks = store.get("picks5e", {});
+  const PICKS = 3;
+  const curIdx = () => Math.floor((Date.now() - store.get("bingoStart", Date.now())) / 1000 / SEC);
+  // a pick turns green (confirmed) once its minute is over and it was one of the 3 right squares
+  const greens = (cur) => { const g = new Set(); for (let k = 0; k < Math.min(cur, SITUATIONS.length); k++) (picks[k] || []).forEach(id => { if (SITUATIONS[k].a.includes(id)) g.add(id); }); return g; };
+  let lastCur = -1, flash = null;
   const draw = () => {
+    const cur = curIdx(), g = greens(cur), mine = cur < SITUATIONS.length ? (picks[cur] || []) : [];
+    const wrong = new Set(flash && Date.now() < flash.until ? flash.ids : []);
+    const isOn = i => order[i] === "FREE" || g.has(order[i]);
     const wins = LINES.filter(l => l.every(isOn));
     const winCells = new Set(wins.flat());
     const full = order.every((id, i) => isOn(i));
@@ -340,31 +356,49 @@ function renderCard(){
       <div class="banner ${full ? "b2 show" : wins.length ? "b1 show" : ""}">${full ? "🏆 FULL CARD! The game ends." : wins.length >= 2 ? "🎉 DOUBLE BINGO!" : wins.length ? "🎉 BINGO! Shout it out – keep playing!" : ""}</div>
       <div class="grid g5">${"BINGO".split("").map(l => `<div class="letter">${l}</div>`).join("")}
       ${order.map((id, i) => { if (id === "FREE") return `<div class="cell free ${winCells.has(i) ? "win" : ""}">FREE!</div>`;
-        const q = label(id), kind = q.t;
-        return `<button class="cell ${kind} ${marked.includes(id) ? "on" : ""} ${winCells.has(i) ? "win" : ""}" data-id="${id}"><span class="k">${KIND[q.t]}</span>${q.x}</button>`; }).join("")}</div>
+        const q = label(id), state = g.has(id) ? "ok" : mine.includes(id) ? "on" : wrong.has(id) ? "bad" : "";
+        return `<button class="cell ${q.t} ${state} ${winCells.has(i) ? "win" : ""}" data-id="${id}"><span class="k">${KIND[q.t]}</span>${q.x}</button>`; }).join("")}</div>
       <div class="legend"><span><b style="color:var(--red)">Common attack</b> = what the attacker does</span><span><b style="color:var(--green)">Good habit</b> = what you do</span><span><b style="color:#e07000">Trap</b> = the wrong reaction – mark it when you spot it</span><span><b style="color:var(--purple)">Weak point (risk!)</b> = the risk behind the situation</span></div>
       <div class="bar"><button class="btn" id="rules">Show me the rules</button><a class="btn" href="checklist.html" style="text-decoration:none;background:var(--navy);color:#fff;border-color:var(--navy)">Questions &amp; checklist →</a></div>
       <footer>Your card stays on your phone only. All names and organisations in the game are fictional.</footer>`;
     $("#rules").onclick = e => { e.preventDefault(); renderIntro(); window.scrollTo(0,0); };
     document.querySelectorAll("button.cell").forEach(c => c.onclick = () => {
-      const id = c.dataset.id; marked = marked.includes(id) ? marked.filter(x => x !== id) : [...marked, id];
-      store.set("marked5e", marked); draw(); if (window._qTick) window._qTick(); });
+      const id = c.dataset.id, k = curIdx();
+      if (k >= SITUATIONS.length) return;                       // game over: card is final
+      if (g.has(id)) return note("This square is already confirmed ✓");
+      let list = picks[k] || [];
+      if (list.includes(id)) list = list.filter(x => x !== id);  // tap again = undo
+      else if (list.length >= PICKS) return note("Only 3 picks per situation – tap one of your picks to change it.");
+      else list = [...list, id];
+      picks[k] = list; store.set("picks5e", picks); draw(); if (window._qTick) window._qTick(true);
+    });
   };
+  const note = (m) => { const n = document.getElementById("qnote"); if (n) { n.textContent = m; n.classList.add("show"); clearTimeout(window._noteT); window._noteT = setTimeout(() => n.classList.remove("show"), 2500); } };
   draw();
-  // one situation per minute, counted from the moment the player opened the card (survives a reload)
-  const tick = () => {
-    const box = document.getElementById("qbox"); if (!box) return;
+  // one situation per minute; when a minute ends, the right picks turn green and wrong ones flash red
+  const tick = (force) => {
     const t = Math.floor((Date.now() - store.get("bingoStart", Date.now())) / 1000);
     const i = Math.floor(t / SEC), left = SEC - (t % SEC);
-    if (i >= SITUATIONS.length) {
-      box.innerHTML = `<div class="qdone">All ${SITUATIONS.length} situations done – check your card!</div>`;
-      clearInterval(window._qTimer); return;
+    if (lastCur !== -1 && i !== lastCur) {                       // a minute just ended -> validate
+      const k = lastCur, mine = picks[k] || [], right = mine.filter(id => SITUATIONS[k].a.includes(id));
+      flash = { ids: mine.filter(id => !SITUATIONS[k].a.includes(id)), until: Date.now() + 4000, k, right: right.length, picked: mine.length };
+      lastCur = i; draw(); setTimeout(() => { if (document.getElementById("qbox")) { draw(); window._qTick && window._qTick(true); } }, 4100);
     }
-    const sit = SITUATIONS[i];
-    if (box.dataset.i !== String(i)) {
-      box.dataset.i = i;
-      box.innerHTML = `<div class="qtop"><span>Situation ${i + 1} of ${SITUATIONS.length}</span><span class="qsec" id="qsec"></span></div>
-        <div class="qh">${sit.h}</div><div class="qs">${sit.s}</div><div class="qbar"><i id="qfill"></i></div>`;
+    if (lastCur === -1) lastCur = i;
+    const box = document.getElementById("qbox"); if (!box) return;
+    const result = flash && Date.now() < flash.until + 20000
+      ? `<div class="qres">Situation ${flash.k + 1}: <b>${flash.right} of 3</b> right${flash.right === 3 ? " 🎉" : ""}</div>` : "";
+    if (i >= SITUATIONS.length) {
+      if (box.dataset.i !== "end" || force) { box.dataset.i = "end"; box.innerHTML = `${result}<div class="qdone">All ${SITUATIONS.length} situations done – check your card!</div>`; }
+      return;
+    }
+    const sit = SITUATIONS[i], n = (picks[i] || []).length;
+    if (box.dataset.i !== String(i) || force || box.dataset.r !== String(!!result)) {
+      box.dataset.i = i; box.dataset.r = String(!!result);
+      box.innerHTML = `${result}<div class="qtop"><span>Situation ${i + 1} of ${SITUATIONS.length}</span><span class="qsec" id="qsec"></span></div>
+        <div class="qh">${sit.h}</div><div class="qs">${sit.s}</div>
+        <div class="qpicks">Your picks: ${[0,1,2].map(j => `<i class="${j < n ? "on" : ""}"></i>`).join("")} <span>${n}/3</span></div>
+        <div class="qnote" id="qnote"></div><div class="qbar"><i id="qfill"></i></div>`;
     }
     document.getElementById("qsec").textContent = `⏱ ${mmss(left)}`;
     document.getElementById("qfill").style.width = (left / SEC * 100) + "%";
