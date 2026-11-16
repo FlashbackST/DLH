@@ -7,6 +7,37 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* fictional share dialog (no real brand) */
+    .share { background:#fff; border:1px solid #d6dde6; border-radius:16px; box-shadow:0 6px 20px rgba(10,26,51,.12); padding:16px; margin:0 0 14px; }
+    .share .file { display:flex; align-items:center; gap:10px; font-weight:800; font-size:17px; color:#0a1a33; margin:0 0 4px; }
+    .share .file i { font-style:normal; font-size:26px; }
+    .share .who { font-size:13px; color:#64748b; margin:0 0 12px; }
+    .share h4 { margin:12px 0 6px; font-size:14px; color:#0a1a33; text-transform:uppercase; letter-spacing:.05em; }
+    .acc { display:flex; flex-direction:column; gap:8px; }
+    .acc label { display:flex; gap:10px; align-items:flex-start; border:2px solid #d6dde6; border-radius:12px; padding:10px 12px; cursor:pointer; font-size:15px; line-height:1.35; }
+    .acc label b { display:block; }
+    .acc input { margin-top:3px; width:18px; height:18px; }
+    .acc label.sel { border-color:#00b4ff; background:#eef9ff; }
+    .people { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 8px; }
+    .people span { background:#eef2f7; border-radius:999px; padding:5px 10px; font-size:14px; font-weight:600; }
+    .people span button { border:0; background:none; font-size:15px; cursor:pointer; color:#64748b; padding:0 0 0 4px; }
+    .add { display:flex; gap:6px; }
+    .add select { flex:1; font:inherit; font-size:15px; padding:9px; border:1px solid #c7c7c7; border-radius:10px; background:#fff; }
+    .add button { font:inherit; font-weight:700; border:0; border-radius:10px; padding:9px 14px; background:#0a1a33; color:#fff; cursor:pointer; }
+    .verdict { border-radius:12px; padding:12px 14px; font-size:15px; line-height:1.45; margin:12px 0 0; }
+    .verdict.bad { background:#ffe0e0; color:#8a0b0b; }
+    .verdict.ok { background:#d9f5dc; color:#11632a; }
+    .verdict.mid { background:#fff4c2; color:#6b4e00; }
+    .rule321 { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:6px 0 12px; }
+    .rule321 div { background:#fff; border:1px solid #d6dde6; border-radius:14px; padding:12px 8px; text-align:center; font-size:14px; line-height:1.3; }
+    .rule321 div.off { background:#0a1a33; color:#fff; border-color:#0a1a33; }
+    .rule321 .n { font-size:38px; font-weight:900; color:#00b4ff; line-height:1; }
+    .rule321 .e { font-size:24px; display:block; margin:4px 0; }
+    .check321 label { display:flex; gap:10px; align-items:center; font-size:16px; padding:8px 0; border-top:1px solid #e6eef5; }
+    .check321 input { width:20px; height:20px; }
+    #score321 { font-weight:800; margin-top:8px; }
+  </style>
 </head>
 <body data-page="sharing">
   <header class="top"><div class="in"><a href="index.html">☰ Menu</a><div class="t">Share safely &amp; back up</div></div></header>
@@ -14,37 +45,105 @@
 
     <div class="tag">Part 5 · Share safely &amp; back up</div>
     <h1>Share only with who needs it</h1>
+    <p>Try it: you want to share the volunteer list with the <b>2 people who organise the summer camp</b>. Choose the settings.</p>
 
-    <div class="card"><h3 style="margin-top:0">✉️ Email</h3>
-      <p>Double-check the recipient before you send. Don't send personal data to private addresses. Use “Bcc” for group emails to donors or volunteers.</p></div>
-    <div class="card"><h3 style="margin-top:0">☁️ Cloud storage</h3>
-      <p>Share with <b>named people</b>, never “anyone with the link”. Remove access when the work is done.</p></div>
-    <div class="card"><h3 style="margin-top:0">🗂️ Shared drives</h3>
-      <p>Give each person only <b>what they need</b>. Review who has access when volunteers or staff leave.</p></div>
-    <div class="card"><h3 style="margin-top:0">💬 Messaging apps</h3>
-      <p>No beneficiary or donor data in WhatsApp or other group chats. Use the NGO's own tools for personal data.</p></div>
+    <!-- 1) interactive share demo -->
+    <div class="share" id="share">
+      <div class="file"><i>📄</i> volunteers_2026.xlsx</div>
+      <p class="who">Names, phone numbers and addresses of 40 volunteers · Zesumme Wuessen asbl (fictional)</p>
 
-
-    <h1 style="margin-top:28px">Keep a copy they can't reach</h1>
-    <p><b>Ransomware</b> locks all your files and asks for money to unlock them. A good backup lets you recover without paying.</p>
-
-    <div class="card"><h3 style="margin-top:0">💾 The 3-2-1 backup rule</h3>
-      <div class="rule321">
-        <div><b>3</b><span>copies of your data</span></div>
-        <div><b>2</b><span>different places (e.g. cloud + external disk)</span></div>
-        <div><b>1</b><span>copy kept offline</span></div>
+      <h4>Who can open it?</h4>
+      <div class="acc" id="acc">
+        <label><input type="radio" name="acc" value="anyone"> <span><b>🌍 Anyone with the link</b>Whoever gets the link can open it – even if it is forwarded.</span></label>
+        <label><input type="radio" name="acc" value="org"> <span><b>🏢 Everyone in the NGO</b>All staff and volunteers with an NGO account.</span></label>
+        <label><input type="radio" name="acc" value="named"> <span><b>🔒 Only people I add</b>Only the named people below can open it.</span></label>
       </div>
-      <p>Synced folders and disks that stay plugged in get locked too. Only an <b>offline</b> copy saves you – and <b>test</b> that you can restore it.</p></div>
 
-    <div class="card"><h3 style="margin-top:0">🚨 Ransomware: the first 3 things to do</h3>
+      <div id="named-box" hidden>
+        <h4>People with access</h4>
+        <div class="people" id="people"></div>
+        <div class="add">
+          <select id="pick">
+            <option value="">Add a person…</option>
+            <option>Anna – camp organiser</option>
+            <option>Marc – camp organiser</option>
+            <option>Lisa – treasurer</option>
+            <option>Former volunteer (left in 2024)</option>
+          </select>
+          <button id="addbtn" type="button">Add</button>
+        </div>
+      </div>
+      <div id="verdict"></div>
+    </div>
+
+    <div class="card"><h3 style="margin-top:0">✅ The 3 sharing rules</h3>
       <ol class="big">
-        <li><b>Disconnect</b> the device from Wi-Fi and the network.</li>
-        <li><b>Don't pay</b> and don't delete anything.</li>
-        <li><b>Call</b> your IT contact or board right away, then report it (see <a href="help.html">Get help</a>).</li>
-      </ol></div>
+        <li>Share with <b>named people</b>, never “anyone with the link”.</li>
+        <li>Give only <b>what they need</b> – “can view” if they don't need to edit.</li>
+        <li><b>Remove access</b> when the work is done or someone leaves.</li>
+      </ol>
+      <p class="small">No donor or beneficiary data in WhatsApp groups or private email addresses.</p></div>
+
+    <!-- 2) 3-2-1 backup rule -->
+    <h2>Back up: the 3-2-1 rule</h2>
+    <div class="rule321">
+      <div><span class="n">3</span><span class="e">📄📄📄</span>copies of your data</div>
+      <div><span class="n">2</span><span class="e">💻 🖴</span>different kinds of storage</div>
+      <div class="off"><span class="n">1</span><span class="e">🔌🚫</span>copy offline – unplugged</div>
+    </div>
+    <div class="card check321"><h3 style="margin-top:0">Does your NGO do this? Tick what is true:</h3>
+      <label><input type="checkbox" class="c321"> We have at least <b>3 copies</b> of important files.</label>
+      <label><input type="checkbox" class="c321"> They are on <b>2 kinds of storage</b> (e.g. cloud + external drive).</label>
+      <label><input type="checkbox" class="c321"> <b>1 copy is unplugged</b> most of the time.</label>
+      <label><input type="checkbox" class="c321"> We have <b>tested</b> restoring a file this year.</label>
+      <div id="score321"></div></div>
+
+    <!-- 3) why offline matters -->
+    <div class="card" style="border-left:6px solid #d11"><h3 style="margin-top:0">🔐 Why one copy must be offline</h3>
+      <p><b>Ransomware</b> locks every file it can reach – the computer, shared drives, plugged-in USB drives and synced cloud folders. Cloud syncing is <b>not</b> a backup: it syncs the locked files too. Only the copy that was <b>unplugged</b> stays clean.</p>
+      <p class="small">You'll see this in action in the Ransomware Escape Room next.</p></div>
 
     <div class="nav-next"><a class="btn ghost" href="passwords.html">← Back</a><a class="btn primary" href="escape.html">Ransomware Escape Room →</a></div>
   </main>
+
+  <script>
+  (function () {
+    const $ = s => document.querySelector(s);
+    const ORGANISERS = ["Anna – camp organiser", "Marc – camp organiser"];
+    let access = null, people = [];
+
+    function verdict() {
+      const v = $("#verdict");
+      if (!access) { v.innerHTML = ""; return; }
+      if (access === "anyone") { v.innerHTML = `<div class="verdict bad">❌ <b>Risky.</b> 40 volunteers' addresses are open to anyone who gets the link – one forwarded email or a public post and the data is out.</div>`; return; }
+      if (access === "org") { v.innerHTML = `<div class="verdict mid">⚠️ <b>Too wide.</b> Dozens of people can now see personal data they don't need. Only the 2 organisers need it.</div>`; return; }
+      const extra = people.filter(p => !ORGANISERS.includes(p));
+      const missing = ORGANISERS.filter(p => !people.includes(p));
+      if (extra.some(p => p.startsWith("Former"))) { v.innerHTML = `<div class="verdict bad">❌ <b>A former volunteer</b> should never get access – remove them.</div>`; return; }
+      if (extra.length) { v.innerHTML = `<div class="verdict mid">⚠️ <b>${extra[0].split(" –")[0]}</b> doesn't need this list. Share only with who needs it.</div>`; return; }
+      if (missing.length) { v.innerHTML = `<div class="verdict mid">Good start! Now add the people who need it: ${missing.map(m => m.split(" –")[0]).join(" and ")}.</div>`; return; }
+      v.innerHTML = `<div class="verdict ok">✅ <b>Perfect.</b> Only Anna and Marc can open it. Remember to remove their access after the camp.</div>`;
+      try { const d = JSON.parse(localStorage.getItem("ngo1_done") || "{}"); d.sharing = true; localStorage.setItem("ngo1_done", JSON.stringify(d)); } catch (e) {}
+    }
+    function drawPeople() {
+      $("#people").innerHTML = people.map((p, i) => `<span>${p.split(" (")[0]}<button type="button" data-i="${i}" aria-label="Remove">×</button></span>`).join("") || `<span style="background:none;color:#64748b;font-weight:500">Nobody yet</span>`;
+      document.querySelectorAll("#people button").forEach(b => b.onclick = () => { people.splice(+b.dataset.i, 1); drawPeople(); verdict(); });
+    }
+    document.querySelectorAll("#acc input").forEach(r => r.onchange = () => {
+      access = r.value;
+      document.querySelectorAll("#acc label").forEach(l => l.classList.toggle("sel", l.contains(document.querySelector("#acc input:checked"))));
+      $("#named-box").hidden = access !== "named"; drawPeople(); verdict();
+    });
+    $("#addbtn").onclick = () => { const v = $("#pick").value; if (v && !people.includes(v)) people.push(v); $("#pick").value = ""; drawPeople(); verdict(); };
+
+    const boxes = document.querySelectorAll(".c321");
+    boxes.forEach(b => b.onchange = () => {
+      const n = [...boxes].filter(x => x.checked).length;
+      $("#score321").textContent = n === 4 ? "🎉 4 of 4 – your backups would survive ransomware." :
+        n === 0 ? "" : `${n} of 4. The first one you didn't tick is a good first step for next week.`;
+    });
+  })();
+  </script>
   <script src="js/config.js"></script>
   <script src="js/data.js"></script>
   <script src="js/app.js"></script>
