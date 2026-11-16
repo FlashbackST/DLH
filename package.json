@@ -1,0 +1,8 @@
+{
+  "name": "cybersecurity-ngo",
+  "private": true,
+  "description": "Cyber Bingo live lobby (Netlify Function + Netlify Blobs)",
+  "dependencies": {
+    "@netlify/blobs": "^11.1.9"
+  }
+}
