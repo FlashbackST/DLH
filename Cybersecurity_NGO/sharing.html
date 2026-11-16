@@ -34,9 +34,11 @@
     .rule321 div.off { background:#0a1a33; color:#fff; border-color:#0a1a33; }
     .rule321 .n { font-size:38px; font-weight:900; color:#00b4ff; line-height:1; }
     .rule321 .e { font-size:24px; display:block; margin:4px 0; }
-    .check321 label { display:flex; gap:10px; align-items:center; font-size:16px; padding:8px 0; border-top:1px solid #e6eef5; }
-    .check321 input { width:20px; height:20px; }
-    #score321 { font-weight:800; margin-top:8px; }
+    .ticks { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .ticks label { display:flex; gap:8px; align-items:center; font-size:15px; font-weight:600; padding:9px 10px; border:2px solid #d6dde6; border-radius:10px; cursor:pointer; }
+    .ticks label:has(input:checked) { border-color:#1e9e3e; background:#d9f5dc; }
+    .ticks input { width:18px; height:18px; flex:none; }
+    #score321 { font-weight:700; margin-top:8px; font-size:14px; }
   </style>
 </head>
 <body data-page="sharing">
@@ -49,7 +51,7 @@
 
     <!-- 1) interactive share demo -->
     <div class="share" id="share">
-      <div class="file"><i>📄</i> volunteers_2026.xlsx</div>
+      <div class="file"><i>📄</i> volunteers_2026.pdf</div>
       <p class="who">Names, phone numbers and addresses of 40 volunteers · Zesumme Wuessen asbl (fictional)</p>
 
       <h4>Who can open it?</h4>
@@ -91,11 +93,13 @@
       <div><span class="n">2</span><span class="e">💻 🖴</span>different kinds of storage</div>
       <div class="off"><span class="n">1</span><span class="e">🔌🚫</span>copy offline – unplugged</div>
     </div>
-    <div class="card check321"><h3 style="margin-top:0">Does your NGO do this? Tick what is true:</h3>
-      <label><input type="checkbox" class="c321"> We have at least <b>3 copies</b> of important files.</label>
-      <label><input type="checkbox" class="c321"> They are on <b>2 kinds of storage</b> (e.g. cloud + external drive).</label>
-      <label><input type="checkbox" class="c321"> <b>1 copy is unplugged</b> most of the time.</label>
-      <label><input type="checkbox" class="c321"> We have <b>tested</b> restoring a file this year.</label>
+    <div class="card check321"><h3 style="margin-top:0">Does your NGO do this?</h3>
+      <div class="ticks">
+        <label><input type="checkbox" class="c321"> 3 copies</label>
+        <label><input type="checkbox" class="c321"> 2 kinds of storage</label>
+        <label><input type="checkbox" class="c321"> 1 copy offline</label>
+        <label><input type="checkbox" class="c321"> Restore tested</label>
+      </div>
       <div id="score321"></div></div>
 
     <!-- 3) why offline matters -->
