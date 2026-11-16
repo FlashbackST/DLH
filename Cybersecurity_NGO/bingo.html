@@ -223,7 +223,7 @@ function myId(){ let id = store.get("bingoPid", null); if (!id) { id = Math.rand
 
 /* step 1: rules and winning patterns, then the card */
 function renderIntro(){
-  clearInterval(window._qTimer);
+  clearInterval(window._qTimer); clearInterval(window._gPoll);
   const old = store.get("bingoStart", null);   // forget a game that ended long ago
   if (old && Date.now() - old > (SITUATIONS.length * SEC + 600) * 1000) { store.set("bingoStart", null); store.set("bingoGame", null); store.set("marked5e", []); }
   const pats = [["Row",[10,11,12,13,14]],["Column",[2,7,12,17,22]],["Diagonal",[0,6,12,18,24]],["4 corners",[0,4,20,24]]];
@@ -282,9 +282,25 @@ function renderIntro(){
   };
 }
 
+
+/* while playing: if the trainer stops the game, every phone stops too */
+function stoppedByTrainer(){
+  clearInterval(window._qTimer); clearInterval(window._gPoll);
+  ["bingoStart","bingoGame"].forEach(k => store.set(k, null)); store.set("bingoStarted", false);
+  store.set("marked5e", []); store.set("order5e", null);          // next game = fresh card
+  renderIntro(); window.scrollTo(0,0);
+  const e = document.getElementById("err"); if (e) e.textContent = "The trainer stopped the game. Type the new code to join the next one.";
+}
+function watchGame(){
+  clearInterval(window._gPoll);
+  const code = store.get("bingoGame", null); if (!code) return;
+  window._gPoll = setInterval(async () => {
+    try { const d = await api(null, "?code=" + code); if (d && d.ok === false && d.error === "no-game") stoppedByTrainer(); } catch (e) {}  // no internet: keep playing
+  }, 4000);
+}
 /* waiting room on the phone: until the trainer presses Start */
 function renderLobby(){
-  clearInterval(window._qTimer);
+  clearInterval(window._qTimer); clearInterval(window._gPoll);
   const code = store.get("bingoGame", null); if (!code) { renderIntro(); return; }
   $("#app").innerHTML = `<div class="wait"><div class="wt">You're in, ${esc(store.get("bingoName", ""))}!</div>
       <div class="wc small">⏳</div><p>Waiting for the trainer to start the game.<br><b id="cnt">…</b></p></div>
@@ -293,7 +309,7 @@ function renderLobby(){
   const poll = async () => {
     try {
       const d = await api(null, "?code=" + code);
-      if (!d.ok) { clearInterval(window._qTimer); store.set("bingoGame", null); store.set("bingoStarted", false); renderIntro(); $("#err") && ($("#err").textContent = "That game was closed – type the new code from the screen."); return; }
+      if (!d.ok && d.error === "no-game") { stoppedByTrainer(); return; }
       if (d.startAt) { clearInterval(window._qTimer); store.set("bingoStart", localTime(d.startAt)); renderCard(); return; }
       const c = document.getElementById("cnt"); if (c) c.textContent = d.count === 1 ? "1 player has joined." : `${d.count} players have joined.`;
     } catch (e) { const c = document.getElementById("cnt"); if (c) c.textContent = "Reconnecting…"; }
@@ -309,7 +325,7 @@ function renderCard(){
       <div class="bar"><button class="btn" id="rules">Show me the rules</button></div>`;
     $("#rules").onclick = () => { renderIntro(); window.scrollTo(0,0); };
     const w = () => { const left = Math.ceil((st - Date.now()) / 1000); if (left <= 0) { clearInterval(window._qTimer); renderCard(); return; } const el = document.getElementById("wc"); if (el) el.textContent = mmss(left); };
-    w(); window._qTimer = setInterval(w, 250); return;
+    w(); window._qTimer = setInterval(w, 250); watchGame(); return;
   }
   try{ const d = JSON.parse(localStorage.getItem("ngo1_done") || "{}"); d.bingo = true; localStorage.setItem("ngo1_done", JSON.stringify(d)); }catch(e){}
   let order = store.get("order5e", null); if (!order || order.length !== 25) { order = makeCard(); store.set("order5e", order); }
@@ -355,6 +371,7 @@ function renderCard(){
     document.getElementById("qsec").classList.toggle("low", left <= 10);
   };
   window._qTick = tick; clearInterval(window._qTimer); tick(); window._qTimer = setInterval(tick, 250);
+  watchGame();
 }
 
 /* ---------------- TRAINER SCREEN (#trainer) ---------------- */
