@@ -41,7 +41,8 @@ document.addEventListener("DOMContentLoaded", () => {
 /* ---------- HOME: menu with progress ticks ---------- */
 function renderMenu() {
   const done = store.get("done", {});
-  $("#menu").innerHTML = PAGES.map((p, i) => `
+  const list = (typeof MENU !== "undefined") ? MENU : PAGES;
+  $("#menu").innerHTML = list.map((p, i) => `
     <a class="step ${done[p.id] ? "done" : ""}" href="${p.file}">
       <div class="n">${done[p.id] ? "✓" : i + 1}</div>
       <div><b>${esc(p.title)}</b><span>${esc(p.sub)}</span></div>
@@ -130,48 +131,47 @@ function drawMessage(m) {
   if (m.kind === "mail") return `<div class="mail"><div class="h"><div><b>From:</b> ${segs(m.from)}</div><div><b>Subject:</b> ${segs(m.subject)}</div></div>
       <div class="b">${m.body.map(line => `<p>${segs(line)}</p>`).join("")}</div></div>`;
   if (m.kind === "sms") return `<div class="phone"><div class="who">${esc(m.who)}</div>${m.bubbles.map(b => `<div class="bub">${segs(b)}</div>`).join("")}</div>`;
-  return `<div class="browser"><div class="url">🔒 ${segs(m.url)}</div><div class="pg"><b style="color:#2f6fec;font-size:18px">☁ CloudBox</b>
+  return `<div class="browser"><div class="url">🔒 ${segs(m.url)}</div><div class="pg"><b style="color:#2f6fec;font-size:18px">☁ ${esc(m.brand || "CloudBox")}</b>
       <p style="color:#222;margin:8px 0">${segs(m.text)}</p><div class="fakein">Email address</div><div class="fakein">Password</div><div class="fakebtn">Sign in</div></div></div>`;
 }
 function renderPhishing() {
   const app = $("#phishing-app");
+  if (typeof PAIRS === "undefined") { app.innerHTML = "<p>Exercise data missing (js/phishing-data.js).</p>"; return; }
   let i = 0, right = 0;
   const show = () => {
     segMap = {}; segCount = 0;
+    const p = PAIRS[i];
     app.innerHTML = `
-      <div class="tag">Message ${i + 1} of ${MESSAGES.length}</div>
-      <div class="progress"><i style="width:${i / MESSAGES.length * 100}%"></i></div>
-      <p style="color:var(--ink)"><b>1.</b> Tap anything that looks suspicious. <b>2.</b> Decide: real or fake?</p>
-      <div id="mock">${drawMessage(MESSAGES[i])}</div>
-      <div class="row next" id="act"><button class="btn real" data-v="0">✅ Real</button><button class="btn fake" data-v="1">🎣 Fake</button></div>
+      <div class="tag">Pair ${i + 1} of ${PAIRS.length} · ${esc(p.title)}</div>
+      <div class="progress"><i style="width:${i / PAIRS.length * 100}%"></i></div>
+      <p style="color:var(--ink)"><b>One is real, one is fake.</b> Which one is fake?</p>
+      <h3>A</h3><div id="ma">${drawMessage(p.a)}</div>
+      <h3>B</h3><div id="mb">${drawMessage(p.b)}</div>
+      <div class="row next" id="act"><button class="btn fake" data-v="a">🎣 A is fake</button><button class="btn fake" data-v="b">🎣 B is fake</button></div>
       <div id="fb"></div>`;
-    app.querySelectorAll("#mock .seg").forEach(el => el.onclick = () => { if (!$("#mock").classList.contains("locked")) el.classList.toggle("m"); });
-    app.querySelectorAll("#act .btn").forEach(b => b.onclick = () => judge(b.dataset.v === "1"));
+    app.querySelectorAll("#act .btn").forEach(b => b.onclick = () => judge(b.dataset.v));
   };
-  const judge = saidFake => {
-    const m = MESSAGES[i], ok = saidFake === m.phish;
+  const judge = choice => {
+    const p = PAIRS[i], ok = choice === p.fake;
     if (ok) right++;
-    $("#mock").classList.add("locked");
     $("#act").remove();
-    const flags = [];
-    app.querySelectorAll("#mock .seg").forEach(el => {
-      const s = segMap[el.dataset.id], marked = el.classList.contains("m");
-      el.classList.remove("m");
-      if (s.f) { el.classList.add(marked ? "hit" : "miss"); flags.push(`<li><b>${esc(s.t)}</b> – ${esc(s.f)}${marked ? " <span class='small'>(you found it ✓)</span>" : ""}</li>`); }
-      else if (marked) el.classList.add("no"); // tapped something harmless
+    const fakeBox = p.fake === "a" ? "#ma" : "#mb", flags = [];
+    app.querySelectorAll(fakeBox + " .seg").forEach(el => {
+      const s = segMap[el.dataset.id];
+      if (s && s.f) { el.classList.add("miss"); flags.push(`<li><b>${esc(s.t)}</b> – ${esc(s.f)}</li>`); }
     });
-    $("#fb").innerHTML = `<div class="fb ${ok ? "ok" : "ko"}"><b>${ok ? "✅ Correct" : "❌ Not quite"} – this message is ${m.phish ? "fake" : "real"}.</b></div>
-      ${flags.length ? `<ul class="redflags">${flags.join("")}</ul>` : ""}
-      <div class="fb info">💡 ${esc(m.tip)}</div>
-      <button class="btn primary next" id="nx">${i < MESSAGES.length - 1 ? "Next message" : "Finish"}</button>`;
-    $("#nx").onclick = () => { i++; i < MESSAGES.length ? show() : finish(); };
+    $("#fb").innerHTML = `<div class="fb ${ok ? "ok" : "ko"}"><b>${ok ? "✅ Correct" : "❌ Not quite"} – ${p.fake.toUpperCase()} is the fake one.</b></div>
+      ${flags.length ? `<p style="color:var(--ink);margin:10px 0 4px"><b>The red flags in ${p.fake.toUpperCase()}:</b></p><ul class="redflags">${flags.join("")}</ul>` : ""}
+      <div class="fb info">💡 ${esc(p.tip)}</div>
+      <button class="btn primary next" id="nx">${i < PAIRS.length - 1 ? "Next pair" : "Finish"}</button>`;
+    $("#nx").onclick = () => { i++; i < PAIRS.length ? show() : finish(); };
+    $("#fb").scrollIntoView({ behavior: "smooth", block: "start" });
   };
   const finish = () => {
     markDone("phishing");
     app.innerHTML = `<div class="card" style="text-align:center"><div class="tag">Exercise done</div>
-        <div class="big-score">${right} / ${MESSAGES.length}</div><p>messages judged correctly</p>
-        <div class="fb info" style="text-align:left"><b>Stop · Check · Report</b><br>Stop before you click. Check the sender, the link and what is asked. Report anything suspicious to your IT contact or board.</div></div>
-      <a class="btn primary" href="passwords.html">Next: Passwords & MFA</a>`;
+        <div class="big-score">${right} / ${PAIRS.length}</div><p>fakes spotted</p>
+        <div class="fb info" style="text-align:left"><b>Stop · Check · Report</b><br>Stop before you click. Check the sender, the link and what is asked. Report anything suspicious to your contact person.</div></div>`;
   };
   show();
 }
@@ -219,6 +219,8 @@ function renderSelfCheck() {
 /* ---------- CHECKLIST: show the participant's first step + feedback link ---------- */
 function renderChecklist() {
   markDone("checklist");
+  const note = $("#my-note");
+  if (note) { note.value = store.get("myNote", ""); note.oninput = () => store.set("myNote", note.value); }
   const step = store.get("firstStep", "");
   if (step) $("#my-step").innerHTML = `<div class="fb ok">🎯 <b>My first step this week:</b> ${esc(step)}</div>`;
   if (CONFIG.feedback && CONFIG.feedback.url) $("#feedback").innerHTML = linkButton(CONFIG.feedback);

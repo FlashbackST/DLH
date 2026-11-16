@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cyber Bingo – Cybersecurity for NGOs</title>
+<!-- Self-contained: works online and offline. Open in any browser.
+     Participants: this page. Trainer screen: add #trainer to the address. -->
+<style>
+  :root{--blue:#00b4ff;--navy:#0a1a33;--bg:#f2f8fd;--line:#cfe0ee;--red:#d62f45;--green:#1b9e5a;--purple:#6a3fd1;--muted:#5a6b80}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--navy);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,sans-serif}
+  header{background:var(--blue);padding:12px 16px;text-align:center}
+  header h1{margin:0;font-size:26px;letter-spacing:-.01em}
+  header p{margin:2px 0 0;font-size:14px}
+  main{max-width:640px;margin:0 auto;padding:14px 12px 40px}
+  .how{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.45;margin-bottom:12px}
+  .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  .grid.g5{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+  .letter{background:var(--navy);color:#fff;border-radius:10px;text-align:center;font-weight:900;font-size:clamp(18px,5vw,26px);padding:4px 0}
+  .cell.free{background:#fff;color:#ffd400;font-weight:900;font-size:clamp(14px,4vw,20px);cursor:default;-webkit-text-stroke:1px #0a1a33;text-shadow:0 1px 0 #0a1a33}
+  .cell.free.win{background:#d9f5e5}
+  .pats{display:flex;gap:8px;justify-content:space-between;margin:0 0 10px}
+  .pat{flex:1;text-align:center;font-size:11px;font-weight:700;color:var(--muted)}
+  .pg{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:4px;margin-bottom:3px}
+  .pg i{aspect-ratio:1/1;background:#e6eef5;border-radius:2px}
+  .pg i.on{background:#f0b400}
+  .chip.trap{background:#e07000;color:#fff}
+  .cell{aspect-ratio:1/1;border:2px solid var(--line);border-radius:12px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;
+        text-align:center;padding:3px;min-width:0;overflow-wrap:anywhere;hyphens:auto;font:inherit;font-size:clamp(9px,2.5vw,14px);font-weight:600;line-height:1.2;color:var(--navy);cursor:pointer;position:relative}
+  .cell .k{font-size:clamp(7px,1.8vw,10px);font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:3px}
+  .cell.flag .k{color:var(--red)} .cell.habit .k{color:var(--green)} .cell.weak .k{color:var(--purple)} .cell.trap .k{color:#e07000}
+  .risk{display:inline-block;background:#ffd400;color:#c00000;font-weight:900;border-radius:4px;padding:0 4px;margin-left:2px;border:1.5px solid #c00000}
+  .cell.on{background:#fff4c2;border-color:#e3a800}
+  .cell.on::after{content:"✓";position:absolute;top:2px;right:6px;font-size:18px;color:#c48a00;font-weight:900}
+  .cell.win{background:#d9f5e5;border-color:var(--green)}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;margin:10px 0;color:var(--muted)}
+  .legend b{font-weight:800}
+  .banner{display:none;margin:12px 0;padding:14px;border-radius:14px;text-align:center;font-size:22px;font-weight:900;color:#fff}
+  .banner.show{display:block}
+  .banner.b1{background:var(--green)} .banner.b2{background:var(--purple)}
+  .btn{border:0;border-radius:12px;padding:12px 16px;font:inherit;font-weight:700;cursor:pointer;background:#fff;border:2px solid var(--line);color:var(--navy)}
+  .bar{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+  footer{font-size:12px;color:var(--muted);text-align:center;margin-top:20px}
+  /* trainer screen */
+  .tr{max-width:1100px}
+  .sit{background:#fff;border-radius:18px;padding:24px;border:1px solid var(--line)}
+  .sit .n{font-size:14px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .sit h2{font-size:clamp(22px,3vw,34px);margin:8px 0 14px}
+  .sit .txt{font-size:clamp(20px,2.6vw,30px);line-height:1.45;background:var(--bg);border-radius:14px;padding:18px}
+  .ans{display:none;margin-top:16px;font-size:clamp(17px,2vw,22px);line-height:1.5}
+  .ans.show{display:block}
+  .chip{display:inline-block;border-radius:999px;padding:6px 14px;margin:4px 6px 4px 0;font-weight:800;color:#fff}
+  .chip.flag{background:var(--red)} .chip.habit{background:var(--green)} .chip.weak{background:var(--purple)}
+  .tbar{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  .tbtn{border:0;border-radius:12px;padding:14px 20px;font:inherit;font-weight:800;font-size:18px;cursor:pointer;background:var(--navy);color:#fff}
+  .tbtn.ghost{background:#fff;color:var(--navy);border:2px solid var(--line)}
+</style>
+</head>
+<body>
+<header style="position:relative;padding-left:76px;padding-right:76px"><a href="index.html" id="menuLink" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#0a1a33;font-weight:700;text-decoration:none;font-size:15px">☰ Menu</a><h1>🎯 Cyber Bingo</h1><p>Cybersecurity for NGOs · Zesumme Wuessen asbl</p></header>
+<main id="app"></main>
+
+<script>
+/* ---------------- THE 16 SQUARES ---------------- */
+const SQUARES = [
+  // red flags (learning outcome 1)
+  {id:"rush",   t:"flag",  x:"Rush: “do it now!”"},
+  {id:"link",   t:"flag",  x:"Strange link"},
+  {id:"code",   t:"flag",  x:"Asks for a code or password"},
+  {id:"money",  t:"flag",  x:"Asks for money"},
+  {id:"secret", t:"flag",  x:"“Keep it secret / don't call”"},
+  // good habits (learning outcome 2)
+  {id:"call",   t:"habit", x:"Call back on a number you know"},
+  {id:"check",  t:"habit", x:"Check the sender and the link"},
+  {id:"tell",   t:"habit", x:"Tell your contact person"},
+  {id:"mfa",    t:"habit", x:"Turn on the phone check (MFA)"},
+  {id:"pwm",    t:"habit", x:"Use a password manager"},
+  {id:"share",  t:"habit", x:"Share only with named people"},
+  {id:"copy",   t:"habit", x:"Keep a copy offline"},
+  {id:"unplug", t:"habit", x:"Unplug the device"},
+  // traps: the wrong reaction in each situation – players mark the trap they spot
+  {id:"t_reply",   t:"trap", x:"Reply to ask if it's real"},
+  {id:"t_approve", t:"trap", x:"Send the code back to help"},
+  {id:"t_pay",     t:"trap", x:"Pay quickly to stay safe"},
+  {id:"t_click",   t:"trap", x:"Click the link to see what it is"},
+  {id:"t_forward", t:"trap", x:"Forward it to all colleagues"},
+  {id:"t_onepw",   t:"trap", x:"One easy password for the whole team"},
+  {id:"t_open",    t:"trap", x:"Share with a link anyone can open"},
+  {id:"t_restart", t:"trap", x:"Ignore it and keep working"},
+  // weak points (learning outcome 3) – found in situations 5, 6 and 7
+  {id:"w1",     t:"weak",  x:"Fake messages"},
+  {id:"w2",     t:"weak",  x:"Simple passwords, no phone check"},
+  {id:"w3",     t:"weak",  x:"Sharing with anyone, no copy"}
+];
+const KIND = {flag:"Common attack", habit:"Good habit", trap:"Trap", weak:"Weak point (risk!)"};
+
+/* ---------------- THE SITUATIONS (trainer screen) ---------------- */
+const SITUATIONS = [
+  {h:"WhatsApp from a new number", s:"“Hi Mum, I lost my phone, this is my new number. Please don't tell Dad – I'll explain later. Can you call me only on this number?”",
+   a:["secret","call","t_reply"], w:"Secrecy cuts you off from people who could warn you. Call your child back on the number you already know.", t:"t_reply", tw:"Your reply goes straight to the scammer."},
+  {h:"The prize draw", s:"Last week two volunteers clicked on an email: “Congratulations, you won our prize draw! Claim your prize here: win-prize-lux.top”",
+   a:["link","w1","t_forward"], w:"A strange link in a message you didn't expect. Fake messages are the first weak point of every NGO.", t:"t_forward", tw:"Forwarding spreads the dangerous link to more people."},
+  {h:"A code “sent by mistake”", s:"WhatsApp from a “volunteer”: “Oops, I sent you a 6-digit code by mistake – can you send it back to me?”",
+   a:["code","mfa","t_approve"], w:"That code lets them take over your WhatsApp. Never share codes, and turn on the two-step check.", t:"t_approve", tw:"Sending the code gives them your WhatsApp account."},
+  {h:"The youth club", s:"At the youth club, all volunteers use the same password “Club2026” for the club email and the Facebook page.",
+   a:["pwm","w2","t_onepw"], w:"One shared, easy password opens everything – the second weak point. A password manager gives each account its own long password.", t:"t_onepw", tw:"One shared, easy password opens everything for an attacker."},
+  {h:"A generous “donor”", s:"Facebook message: “I'd like to give €5,000 to your NGO! First please pay a €90 bank fee through this link.”",
+   a:["money","check","t_pay"], w:"A gift that costs you money first is a scam. Check who is writing and where the link really goes.", t:"t_pay", tw:"Paying to receive money is always a scam."},
+  {h:"The old volunteer", s:"A volunteer who left 8 months ago can still open the shared folder with all members' addresses.",
+   a:["share","w3","t_open"], w:"Access should end when someone leaves – the third weak point is sharing with anyone. Share only with the people who need it.", t:"t_open", tw:"An open link can be forwarded to anyone – forever."},
+  {h:"The full mailbox", s:"Email: “Your mailbox is full! Log in within 24 hours or all your emails will be deleted.”",
+   a:["rush","tell","t_click"], w:"Rush makes you click without thinking. Don't react – show it to your contact person first.", t:"t_click", tw:"Clicking the link is exactly what the attacker wants."},
+  {h:"The strange ZIP file", s:"After opening “Receipt.zip” from an unknown sender, the computer gets very slow and files suddenly have strange names.",
+   a:["unplug","copy","t_restart"], w:"This looks like ransomware. Unplug it from the network to stop it spreading – and only an offline copy lets you get your files back.", t:"t_restart", tw:"While you keep working, ransomware keeps locking files and spreading."}
+];
+
+const $ = s => document.querySelector(s);
+const label = id => SQUARES.find(q => q.id === id);
+const store = { get(k,d){ try{ const v = localStorage.getItem("bingo_"+k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+                set(k,v){ try{ localStorage.setItem("bingo_"+k, JSON.stringify(v)); }catch(e){} } };
+
+/* ---------------- PARTICIPANT CARD (5 x 5, FREE in the middle) ---------------- */
+const LINES = (() => { const L = [];
+  for (let r = 0; r < 5; r++) L.push([0,1,2,3,4].map(c => r*5 + c));
+  for (let c = 0; c < 5; c++) L.push([0,1,2,3,4].map(r => r*5 + c));
+  L.push([0,6,12,18,24], [4,8,12,16,20]);
+  L.push([0,4,20,24]);   // four corners
+  return L; })();
+// a card = 25 cells: 24 squares + "FREE" at index 12.
+// Cards are reshuffled until no line can be completed before situation 5.
+const FIRST_BINGO_FROM = 5;
+function firstLineAt(a){ // situation number (1-8) at which this card gets its first line
+  const m = new Set(["FREE"]);
+  for (let k = 0; k < SITUATIONS.length; k++) {
+    SITUATIONS[k].a.forEach(id => m.add(id));
+    if (LINES.some(l => l.every(i => m.has(a[i])))) return k + 1;
+  }
+  return 99;
+}
+function makeCard(){
+  let a;
+  for (let tries = 0; tries < 10000; tries++) {
+    a = SQUARES.map(q => q.id);
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    a.splice(12, 0, "FREE");
+    if (firstLineAt(a) >= FIRST_BINGO_FROM) return a;
+  }
+  return a;
+}
+function renderCard(){
+  try{ const d = JSON.parse(localStorage.getItem("ngo1_done") || "{}"); d.bingo = true; localStorage.setItem("ngo1_done", JSON.stringify(d)); }catch(e){}
+  let order = store.get("order5e", null); if (!order || order.length !== 25) { order = makeCard(); store.set("order5e", order); }
+  let marked = store.get("marked5e", []);
+  const isOn = i => order[i] === "FREE" || marked.includes(order[i]);
+  const draw = () => {
+    const wins = LINES.filter(l => l.every(isOn));
+    const winCells = new Set(wins.flat());
+    const full = order.every((id, i) => isOn(i));
+    $("#app").innerHTML = `
+      <div class="how"><b>How to play:</b> for each situation, find <b>3 squares</b>: the <b>common attack</b> (or <b>weak point</b>), the <b>good habit</b> that helps, and the <b>TRAP</b> – the wrong reaction to avoid. Wrong? Tap again to remove it. A full <b>row</b>, <b>column</b>, <b>diagonal</b> or the <b>4 corners</b> = <b>BINGO!</b> The first Bingo wins – the game continues. All squares = <b>FULL CARD!</b> – the game ends.</div>
+      <div class="pats">${[["Row",[10,11,12,13,14]],["Column",[2,7,12,17,22]],["Diagonal",[0,6,12,18,24]],["4 corners",[0,4,20,24]]].map(([n,c]) =>
+        `<div class="pat"><div class="pg">${Array.from({length:25},(_,i)=>`<i class="${c.includes(i)?"on":""}"></i>`).join("")}</div><span>${n}</span></div>`).join("")}</div>
+      <div class="banner ${full ? "b2 show" : wins.length ? "b1 show" : ""}">${full ? "🏆 FULL CARD! The game ends." : wins.length >= 2 ? "🎉 DOUBLE BINGO!" : wins.length ? "🎉 BINGO! Shout it out – keep playing!" : ""}</div>
+      <div class="grid g5">${"BINGO".split("").map(l => `<div class="letter">${l}</div>`).join("")}
+      ${order.map((id, i) => { if (id === "FREE") return `<div class="cell free ${winCells.has(i) ? "win" : ""}">FREE!</div>`;
+        const q = label(id), kind = q.t;
+        return `<button class="cell ${kind} ${marked.includes(id) ? "on" : ""} ${winCells.has(i) ? "win" : ""}" data-id="${id}"><span class="k">${KIND[q.t]}</span>${q.x}</button>`; }).join("")}</div>
+      <div class="legend"><span><b style="color:var(--red)">Common attack</b> = what the attacker does</span><span><b style="color:var(--green)">Good habit</b> = what you do</span><span><b style="color:#e07000">Trap</b> = the wrong reaction – mark it when you spot it</span><span><b style="color:var(--purple)">Weak point (risk!)</b> = the risk behind the situation</span></div>
+      <div class="bar"><button class="btn" id="clear">Clear my marks</button><button class="btn" id="newcard">New card</button></div>
+      <div class="bar"><a class="btn" href="sharing.html" style="text-decoration:none">← Back</a><a class="btn" href="checklist.html" style="text-decoration:none;background:var(--navy);color:#fff;border-color:var(--navy)">Questions &amp; checklist →</a></div>
+      <footer>Your card stays on your phone only. All names and organisations in the game are fictional.</footer>`;
+    document.querySelectorAll("button.cell").forEach(c => c.onclick = () => {
+      const id = c.dataset.id; marked = marked.includes(id) ? marked.filter(x => x !== id) : [...marked, id];
+      store.set("marked5e", marked); draw(); });
+    $("#clear").onclick = () => { marked = []; store.set("marked5e", marked); draw(); };
+    $("#newcard").onclick = () => { order = makeCard(); marked = []; store.set("order5e", order); store.set("marked5e", marked); draw(); };
+  };
+  draw();
+}
+
+/* ---------------- TRAINER SCREEN (#trainer) ---------------- */
+function renderTrainer(){
+  let i = 0; const ml = document.getElementById("menuLink"); if (ml) ml.style.display = "none";
+  $("#app").classList.add("tr");
+  const draw = () => {
+    const s = SITUATIONS[i], last = i === SITUATIONS.length - 1;
+    $("#app").innerHTML = `
+      <div class="sit">
+        <div class="n">Situation ${i+1} of ${SITUATIONS.length} · find 3 squares</div>
+        <h2>${s.h}</h2>
+        <div class="txt">${s.s}</div>
+        <div class="ans" id="ans"><div>${s.a.map(id => `<span class="chip ${label(id).t}">${label(id).x}</span>`).join("")}</div><p>${s.w}</p>
+          ${s.t ? `<p><b style="color:#e07000">The trap:</b> ${label(s.t).x} (${s.tw.replace(/\.$/, "")})</p>` : ""}</div>
+        <div class="tbar">
+          <button class="tbtn" id="show">Show the answer</button>
+          <button class="tbtn ghost" id="prev">← Back</button>
+          <button class="tbtn ghost" id="next">${last ? "Start again" : "Next situation →"}</button>
+        </div>
+      </div>
+      <footer>Trainer screen · After each answer, ask: “Who marked something else?” – that is your evidence of learning. Check a “Bingo!” line before you accept it.</footer>`;
+    $("#show").onclick = () => $("#ans").classList.add("show");
+    $("#prev").onclick = () => { if(i > 0){ i--; draw(); } };
+    $("#next").onclick = () => { i = last ? 0 : i + 1; draw(); };
+  };
+  draw();
+}
+
+function route(){ $("#app").classList.remove("tr"); (location.hash === "#trainer" ? renderTrainer : renderCard)(); }
+window.addEventListener("hashchange", route);
+route();
+</script>
+</body>
+</html>
